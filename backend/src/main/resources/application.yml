@@ -1,0 +1,54 @@
+server:
+  port: 9090
+  servlet:
+    session:
+      cookie:
+        # SameSite=Lax works for localhost cross-port requests (5173 → 9090).
+        # For production: use SameSite=None with Secure=true over HTTPS.
+        same-site: lax
+        http-only: true
+
+spring:
+  application:
+    name: gitinbits-poc
+
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            # Scopes required:
+            #   read:user  → /user endpoint (authenticated user profile)
+            #   read:org   → /user/orgs, /orgs/{org}, /orgs/{org}/members, /orgs/{org}/teams
+            #   repo       → access to private + public repos; commits, branches, PRs, issues, etc.
+            scope:
+              - read:user
+              - read:org
+              - repo
+        provider:
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: login
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# ─── GitHub API Configuration ─────────────────────────────────────────────────
+github:
+  base-url: https://api.github.com
+  api-version: "2022-11-28"
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.gitinbits: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web.client: INFO
