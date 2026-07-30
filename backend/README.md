@@ -25,7 +25,7 @@ Before you can run the backend, you must create a GitHub OAuth App:
    | Field | Value |
    |---|---|
    | Application name | `Git in Bits PoC` |
-   | Homepage URL | `http://localhost:5173` |
+   | Homepage URL | `http://localhost:5174` |
    | Authorization callback URL | **`http://localhost:9090/login/oauth2/code/github`** |
 
 4. Click **"Register application"**
@@ -97,7 +97,7 @@ The backend starts on **http://localhost:9090**.
 3. Spring Security exchanges code for access token
    ↓ Token stored in-memory (no database needed)
 
-4. Browser redirected to http://localhost:5173/auth/callback
+4. Browser redirected to http://localhost:5174/auth/callback
    ↓ Session cookie (JSESSIONID) is set
 
 5. Frontend calls GET /api/auth/me  →  { login, name, avatarUrl, ... }
@@ -187,7 +187,7 @@ src/main/java/com/gitinbits/
 ├── config/
 │   ├── SecurityConfig.java        # OAuth2 login, CSRF, session, logout
 │   ├── RestClientConfig.java      # GitHub RestClient with default headers
-│   ├── CorsConfig.java            # CORS for localhost:5173 only
+│   ├── CorsConfig.java            # CORS for localhost:5174 only
 │   └── GitHubProperties.java      # @ConfigurationProperties for github.*
 ├── controller/
 │   ├── AuthController.java        # /api/auth/*

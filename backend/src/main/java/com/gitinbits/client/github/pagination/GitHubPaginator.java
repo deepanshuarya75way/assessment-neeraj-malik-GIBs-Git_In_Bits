@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClient;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Reusable GitHub pagination engine.
@@ -33,6 +34,7 @@ import java.util.List;
 public class GitHubPaginator {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubPaginator.class);
+    private static final int DEFAULT_PAGE_SIZE = 100;
 
     /**
      * Fetches all pages of a GitHub list endpoint and returns the aggregated result.
@@ -50,13 +52,19 @@ public class GitHubPaginator {
             String bearerToken,
             ParameterizedTypeReference<List<T>> responseType) {
 
+        // Enforce maximum page size for the initial request
+        URI optimizedUri = UriComponentsBuilder.fromUri(initialUri)
+                .replaceQueryParam("per_page", DEFAULT_PAGE_SIZE)
+                .build(true)
+                .toUri();
+
         List<T> allItems = new ArrayList<>();
-        URI nextUri = initialUri;
+        URI nextUri = optimizedUri;
         int pageNumber = 0;
 
         while (nextUri != null) {
             pageNumber++;
-            log.debug("Fetching page {} → {}", pageNumber, nextUri);
+            log.debug("Fetching page {} (per_page={}) → {}", pageNumber, DEFAULT_PAGE_SIZE, nextUri);
 
             ResponseEntity<List<T>> response = restClient.get()
                     .uri(nextUri)
@@ -78,7 +86,7 @@ public class GitHubPaginator {
         }
 
         log.debug("Pagination complete: {} page(s), {} total items from {}",
-                pageNumber, allItems.size(), initialUri);
+                pageNumber, allItems.size(), optimizedUri);
         return allItems;
     }
 

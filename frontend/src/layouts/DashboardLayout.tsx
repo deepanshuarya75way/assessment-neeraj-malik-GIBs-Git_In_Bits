@@ -2,6 +2,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { useDataSource } from '../context/DataSourceContext';
+import { AiManagerChat } from '../components/ai/AiManagerChat';
 
 export function DashboardLayout() {
   const { sourceType } = useDataSource();
@@ -20,6 +21,7 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <AiManagerChat />
     </div>
   );
 }

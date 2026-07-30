@@ -3,7 +3,7 @@ server:
   servlet:
     session:
       cookie:
-        # SameSite=Lax works for localhost cross-port requests (5173 → 9090).
+        # SameSite=Lax works for localhost cross-port requests (5174 → 9090).
         # For production: use SameSite=None with Secure=true over HTTPS.
         same-site: lax
         http-only: true
@@ -11,6 +11,18 @@ server:
 spring:
   application:
     name: gitinbits-poc
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/gitinbits
+
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai
+      chat:
+        options:
+          model: llama-3.1-8b-instant
 
   security:
     oauth2:

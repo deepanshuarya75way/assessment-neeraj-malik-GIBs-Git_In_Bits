@@ -60,7 +60,7 @@ public class SecurityConfig {
 
         http
                 // ── CORS ─────────────────────────────────────────────────────
-                // Uses the CorsConfig bean (configured for localhost:5173 only)
+                // Uses the CorsConfig bean (configured for localhost:5174 only)
                 .cors(Customizer.withDefaults())
 
                 // ── CSRF ──────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ public class SecurityConfig {
                         // on this redirect, making it available to the SPA.
                         .defaultSuccessUrl(FRONTEND_CALLBACK_URL, true)
                         // On login failure, redirect to frontend with an error indicator
-                        .failureUrl("http://localhost:5173/auth/error")
+                        .failureUrl("http://localhost:5174/auth/error")
                 )
 
                 // ── Logout ────────────────────────────────────────────────────

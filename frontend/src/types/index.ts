@@ -239,3 +239,108 @@ export interface Ruleset {
   conditions: any;
   rules: any[];
 }
+
+export type HealthLevel = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'CRITICAL';
+
+export type TrendDirection = 'IMPROVING' | 'STABLE' | 'DECLINING';
+
+export interface RepositoryHealthBreakdown {
+  commitScore: number;
+  pullRequestScore: number;
+  issueScore: number;
+  reviewScore: number;
+  branchScore: number;
+  contributorScore: number;
+  overallScore: number;
+}
+
+export type FindingType = 'STRENGTH' | 'WARNING' | 'RISK' | 'RECOMMENDATION';
+
+export type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface HealthFinding {
+  type: FindingType;
+  title: string;
+  description: string;
+  severity: Severity;
+  recommendation?: string;
+}
+
+export interface RepositoryHealthResult {
+  repositoryName: string;
+  overallScore: number;
+  healthLevel: HealthLevel;
+  breakdown: RepositoryHealthBreakdown;
+  findings: HealthFinding[];
+  evaluationTimestamp: string;
+}
+
+export interface RepositoryRiskBreakdown {
+  commitRisk: number;
+  pullRequestRisk: number;
+  issueRisk: number;
+  reviewRisk: number;
+  branchRisk: number;
+  releaseRisk: number;
+  overallRisk: number;
+}
+
+export interface RepositoryRiskResult {
+  breakdown: RepositoryRiskBreakdown;
+  overallRisk: number;
+  riskLevel: HealthLevel;
+  evaluationTimestamp: string;
+}
+
+export interface RepositoryTrendBreakdown {
+  commitTrend: number;
+  pullRequestTrend: number;
+  issueTrend: number;
+  reviewTrend: number;
+  contributorTrend: number;
+  releaseTrend: number;
+  overallTrend: number;
+}
+
+export interface RepositoryTrendResult {
+  breakdown: RepositoryTrendBreakdown;
+  overallTrend: number;
+  direction: TrendDirection;
+  evaluationTimestamp: string;
+}
+
+export interface RepositoryAnalysisReport {
+  health?: RepositoryHealthResult;
+  stability?: RepositoryStabilityResult;
+  risk?: RepositoryRiskResult;
+  trend?: RepositoryTrendResult;
+}
+
+export type StabilityLevel = 'VERY_STABLE' | 'STABLE' | 'MODERATE' | 'UNSTABLE' | 'CRITICAL';
+export type InsightSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export interface RepositoryStabilityInsight {
+  title: string;
+  description: string;
+  severity: InsightSeverity;
+}
+
+export interface RepositoryStabilityBreakdown {
+  commitStabilityScore: number;
+  releaseStabilityScore: number;
+  branchStabilityScore: number;
+  workflowStabilityScore: number;
+  deploymentStabilityScore: number;
+  contributorStabilityScore: number;
+  overallScore: number;
+}
+
+export interface RepositoryStabilityResult {
+  breakdown: RepositoryStabilityBreakdown;
+  overallScore: number;
+  stabilityLevel: StabilityLevel;
+  strengths: RepositoryStabilityInsight[];
+  concerns: RepositoryStabilityInsight[];
+  recommendations: RepositoryStabilityInsight[];
+}
+

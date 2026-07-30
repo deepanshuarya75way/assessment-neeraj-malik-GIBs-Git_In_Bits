@@ -36,7 +36,7 @@ public class CorsConfig {
         config.setAllowedHeaders(List.of("*"));
 
         // Allow the browser to expose the session cookie on cross-origin requests.
-        // Required because the frontend (localhost:5173) and backend (localhost:9090)
+        // Required because the frontend (localhost:5174) and backend (localhost:9090)
         // are on different ports.
         config.setAllowCredentials(true);
 
