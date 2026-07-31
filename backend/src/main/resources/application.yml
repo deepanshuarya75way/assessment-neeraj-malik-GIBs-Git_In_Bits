@@ -22,7 +22,7 @@ spring:
       base-url: https://api.groq.com/openai
       chat:
         options:
-          model: llama-3.1-8b-instant
+          model: llama-3.3-70b-versatile
 
   security:
     oauth2:
@@ -62,5 +62,5 @@ github:
 logging:
   level:
     com.gitinbits: DEBUG
-    org.springframework.security: INFO
-    org.springframework.web.client: INFO
+    org.springframework.security: DEBUG
+    org.springframework.web.client: DEBUG

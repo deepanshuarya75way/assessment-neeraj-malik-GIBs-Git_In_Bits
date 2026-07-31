@@ -5,10 +5,12 @@ import { DataSourceProvider } from './context/DataSourceContext';
 
 import { Login } from './pages/Login';
 import { AuthCallback } from './pages/AuthCallback';
+import { AuthError } from './pages/AuthError';
 import { DataSourceSelection } from './pages/DataSourceSelection';
 import { MyOrgsSelection } from './pages/MyOrgsSelection';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
+import { DeveloperDirectory } from './pages/DeveloperDirectory';
 import { Repositories } from './pages/Repositories';
 import { RepositoryDetails } from './pages/RepositoryDetails';
 import { MetadataExplorer } from './pages/MetadataExplorer';
@@ -54,6 +56,7 @@ export default function App() {
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/error" element={<AuthError />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
@@ -63,6 +66,7 @@ export default function App() {
                 <Route element={<DashboardLayout />}>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/developers" element={<DeveloperDirectory />} />
                   <Route path="/repositories" element={<Repositories />} />
                   <Route path="/repositories/:repo" element={<RepositoryDetails />} />
                   <Route path="/metadata" element={<MetadataExplorer />} />

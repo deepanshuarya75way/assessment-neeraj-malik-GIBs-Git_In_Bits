@@ -43,10 +43,10 @@ public class GithubToDocumentMapper {
                 "private".equalsIgnoreCase(dto.visibility()),
                 dto.fork(),
                 dto.defaultBranch(),
-                dto.stargazersCount(),
-                dto.watchersCount(),
-                dto.forksCount(),
-                dto.openIssuesCount(),
+                dto.stargazersCount() != null ? dto.stargazersCount() : 0,
+                dto.watchersCount() != null ? dto.watchersCount() : 0,
+                dto.forksCount() != null ? dto.forksCount() : 0,
+                dto.openIssuesCount() != null ? dto.openIssuesCount() : 0,
                 dto.language(),
                 dto.createdAt(),
                 dto.updatedAt(),
@@ -73,6 +73,8 @@ public class GithubToDocumentMapper {
                 dto.committerName(),
                 dto.committerEmail(),
                 dto.timestamp(),
+                dto.additions(),
+                dto.deletions(),
                 syncTime
         );
     }
@@ -190,6 +192,26 @@ public class GithubToDocumentMapper {
                 dto.prerelease(),
                 dto.publishedAt(),
                 dto.author(),
+                syncTime
+        );
+    }
+
+    public WorkflowRunDoc toWorkflowRunDoc(WorkflowRunDto dto, String repoFullName, Instant syncTime) {
+        String[] parts  = splitFullName(repoFullName);
+        String owner    = parts[0];
+        String repoName = parts[1];
+        // Unique ID logic since workflow runs can share a name
+        String id       = repoFullName + "#" + dto.name() + "#" + dto.createdAt();
+        return new WorkflowRunDoc(
+                id,
+                owner,
+                repoName,
+                dto.name(),
+                dto.status(),
+                dto.conclusion(),
+                dto.actorLogin(),
+                dto.createdAt(),
+                dto.updatedAt(),
                 syncTime
         );
     }

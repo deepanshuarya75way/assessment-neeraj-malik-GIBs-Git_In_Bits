@@ -9,6 +9,7 @@ import { cn } from '../utils/cn';
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Repositories', href: '/repositories', icon: Book },
+  { name: 'Developers', href: '/developers', icon: Users },
   { name: 'Organizations', href: '#', icon: Building }, // Not implemented in route yet
   { name: 'Teams', href: '#', icon: Users }, // Not implemented in route yet
   { name: 'GitHub Metadata', href: '/metadata', icon: Database },

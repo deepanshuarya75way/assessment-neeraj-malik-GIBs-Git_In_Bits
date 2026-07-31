@@ -103,7 +103,7 @@ public class GitHubMetadataService {
     }
 
     private WorkflowRunDto toWorkflowRunDto(RawWorkflowRun r) {
-        return new WorkflowRunDto(r.name(), r.headBranch(), r.status(), r.conclusion(), r.event(), r.createdAt(), r.updatedAt());
+        return new WorkflowRunDto(r.name(), r.headBranch(), r.status(), r.conclusion(), r.event(), r.createdAt(), r.updatedAt(), r.actor() != null ? r.actor().login() : null);
     }
 
     private DeploymentDto toDeploymentDto(RawDeployment r) {

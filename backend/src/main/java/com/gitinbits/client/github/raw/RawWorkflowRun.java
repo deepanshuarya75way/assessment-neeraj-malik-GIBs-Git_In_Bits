@@ -11,5 +11,11 @@ public record RawWorkflowRun(
         @JsonProperty("conclusion") String conclusion,
         @JsonProperty("event") String event,
         @JsonProperty("created_at") String createdAt,
-        @JsonProperty("updated_at") String updatedAt
-) {}
+        @JsonProperty("updated_at") String updatedAt,
+        @JsonProperty("actor") Actor actor
+) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Actor(
+            @JsonProperty("login") String login
+    ) {}
+}

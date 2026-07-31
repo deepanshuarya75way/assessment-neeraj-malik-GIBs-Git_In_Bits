@@ -31,6 +31,7 @@ public class RepositorySynchronizer {
     private final ContributorRepository contributorRepository;
     private final ReleaseRepository releaseRepository;
     private final SyncMetadataRepository syncMetadataRepository;
+    private final WorkflowRunRepository workflowRunRepository;
 
     public RepositorySynchronizer(
             GitHubRepoService githubRepoService,
@@ -43,7 +44,8 @@ public class RepositorySynchronizer {
             BranchRepository branchRepository,
             ContributorRepository contributorRepository,
             ReleaseRepository releaseRepository,
-            SyncMetadataRepository syncMetadataRepository
+            SyncMetadataRepository syncMetadataRepository,
+            WorkflowRunRepository workflowRunRepository
     ) {
         this.githubRepoService = githubRepoService;
         this.mapper = mapper;
@@ -56,11 +58,14 @@ public class RepositorySynchronizer {
         this.contributorRepository = contributorRepository;
         this.releaseRepository = releaseRepository;
         this.syncMetadataRepository = syncMetadataRepository;
+        this.workflowRunRepository = workflowRunRepository;
     }
 
     public void syncIfNeeded(GitHubContext context, String repoFullName) {
-        if (!syncMetadataRepository.existsById(repoFullName)) {
-            log.info("Repository {} not found in MongoDB. Triggering initial synchronization...", repoFullName);
+        SyncMetadataDoc metadata = syncMetadataRepository.findById(repoFullName).orElse(null);
+        if (metadata == null || metadata.lastSyncTimestamp() == null || 
+            metadata.lastSyncTimestamp().isBefore(Instant.now().minus(Duration.ofMinutes(5)))) {
+            log.info("Repository {} requires synchronization...", repoFullName);
             synchronize(context, repoFullName);
         }
     }
@@ -78,12 +83,28 @@ public class RepositorySynchronizer {
 
         // Fetch Raw DTOs — pass repoName only, not repoFullName
         RepoDto repoDto = githubRepoService.getRepo(context, repoName);
-        List<CommitDto> commits = githubRepoService.listCommits(context, repoName);
+        List<CommitDto> basicCommits = githubRepoService.listCommits(context, repoName);
+        List<CommitDto> commits = new java.util.ArrayList<>();
+        int count = 0;
+        for (CommitDto c : basicCommits) {
+            if (count < 30) {
+                try {
+                    commits.add(githubRepoService.getCommit(context, repoName, c.sha()));
+                } catch (Exception e) {
+                    log.warn("Failed to fetch detailed commit stats for sha: {}", c.sha(), e);
+                    commits.add(c);
+                }
+            } else {
+                commits.add(c);
+            }
+            count++;
+        }
         List<PullRequestDto> pullRequests = githubRepoService.listPulls(context, repoName);
         List<IssueDto> issues = githubRepoService.listIssues(context, repoName);
         List<BranchDto> branches = githubRepoService.listBranches(context, repoName);
         List<ContributorDto> contributors = githubRepoService.listContributors(context, repoName);
         List<ReleaseDto> releases = githubRepoService.listReleases(context, repoName);
+        List<WorkflowRunDto> workflows = githubRepoService.listWorkflowRuns(context, repoName);
 
         // Map and Save Repo
         RepoDoc repoDoc = mapper.toRepoDoc(repoDto, repoFullName, syncTime);
@@ -135,6 +156,12 @@ public class RepositorySynchronizer {
                 .collect(Collectors.toList());
         releaseRepository.saveAll(releaseDocs);
 
+        // Map and Save Workflow Runs
+        List<WorkflowRunDoc> workflowDocs = workflows.stream()
+                .map(dto -> mapper.toWorkflowRunDoc(dto, repoFullName, syncTime))
+                .collect(Collectors.toList());
+        workflowRunRepository.saveAll(workflowDocs);
+
         // Record Metadata
         String latestCommitSha = commits.isEmpty() ? null : commits.get(0).sha();
         SyncMetadataDoc metadata = syncMetadataRepository.findById(repoFullName).orElse(
@@ -154,7 +181,7 @@ public class RepositorySynchronizer {
         Instant end = Instant.now();
         Duration duration = Duration.between(start, end);
         
-        int totalUpserted = 1 + commitDocs.size() + prDocs.size() + reviewCount + issueDocs.size() + branchDocs.size() + contributorDocs.size() + releaseDocs.size();
+        int totalUpserted = 1 + commitDocs.size() + prDocs.size() + reviewCount + issueDocs.size() + branchDocs.size() + contributorDocs.size() + releaseDocs.size() + workflowDocs.size();
 
         log.debug("synchronization completed for {}", repoFullName);
         log.debug("inserted document count: {}", totalUpserted); // Using totalUpserted for simplicity in this PoC

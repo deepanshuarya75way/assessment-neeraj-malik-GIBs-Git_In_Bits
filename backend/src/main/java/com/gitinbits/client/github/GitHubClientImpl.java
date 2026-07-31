@@ -204,10 +204,20 @@ public class GitHubClientImpl implements GitHubClient {
 
     @Override
     public List<RawRepo> listRepositories(String org) {
+        // If the requested 'org' is the currently authenticated user, we can fetch
+        // all their repositories (including private ones) by using the /user/repos endpoint.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
+            String currentUserLogin = (String) oauthToken.getPrincipal().getAttributes().get("login");
+            if (org.equalsIgnoreCase(currentUserLogin)) {
+                return fetchList("/user/repos?affiliation=owner,collaborator", new ParameterizedTypeReference<>() {});
+            }
+        }
+
         try {
             return fetchList("/orgs/" + org + "/repos?type=all", new ParameterizedTypeReference<>() {});
         } catch (GitHubNotFoundException e) {
-            // Fallback for personal user accounts
+            // Fallback for personal user accounts (this only returns public repos for other users)
             return fetchList("/users/" + org + "/repos?type=all", new ParameterizedTypeReference<>() {});
         }
     }
@@ -225,6 +235,11 @@ public class GitHubClientImpl implements GitHubClient {
     @Override
     public List<RawCommit> listCommits(String org, String repo) {
         return fetchList("/repos/" + org + "/" + repo + "/commits", new ParameterizedTypeReference<>() {});
+    }
+
+    @Override
+    public RawCommit getCommit(String org, String repo, String sha) {
+        return fetchSingle("/repos/" + org + "/" + repo + "/commits/" + sha, RawCommit.class);
     }
 
     @Override
@@ -303,16 +318,19 @@ public class GitHubClientImpl implements GitHubClient {
                 new ParameterizedTypeReference<>() {});
     }
 
+    private record RawWorkflowsResponse(int total_count, List<RawWorkflow> workflows) {}
+    private record RawWorkflowRunsResponse(int total_count, List<RawWorkflowRun> workflow_runs) {}
+
     @Override
     public List<RawWorkflow> listWorkflows(String org, String repo) {
-        return fetchList("/repos/" + org + "/" + repo + "/actions/workflows",
-                new ParameterizedTypeReference<>() {});
+        RawWorkflowsResponse response = fetchSingle("/repos/" + org + "/" + repo + "/actions/workflows?per_page=100", RawWorkflowsResponse.class);
+        return response != null && response.workflows() != null ? response.workflows() : List.of();
     }
 
     @Override
     public List<RawWorkflowRun> listWorkflowRuns(String org, String repo) {
-        return fetchList("/repos/" + org + "/" + repo + "/actions/runs",
-                new ParameterizedTypeReference<>() {});
+        RawWorkflowRunsResponse response = fetchSingle("/repos/" + org + "/" + repo + "/actions/runs?per_page=100", RawWorkflowRunsResponse.class);
+        return response != null && response.workflow_runs() != null ? response.workflow_runs() : List.of();
     }
 
     @Override

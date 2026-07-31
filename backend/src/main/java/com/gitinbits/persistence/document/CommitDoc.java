@@ -20,5 +20,7 @@ public record CommitDoc(
         String committerName,
         String committerEmail,
         String committerDate,
+        Integer additions,
+        Integer deletions,
         Instant synchronizedAt
 ) {}

@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface IssueRepository extends MongoRepository<IssueDoc, String> {
     List<IssueDoc> findByOwnerAndRepoName(String owner, String repoName);
+    long countByOwnerAndUserLogin(String owner, String userLogin);
+    List<IssueDoc> findByOwnerAndUpdatedAtBetweenOrderByUpdatedAtDesc(String owner, String start, String end);
+    List<IssueDoc> findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(String owner, String userLogin, String start, String end);
 }

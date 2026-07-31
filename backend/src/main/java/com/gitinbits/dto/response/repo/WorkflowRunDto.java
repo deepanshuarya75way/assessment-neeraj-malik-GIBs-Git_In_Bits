@@ -7,5 +7,6 @@ public record WorkflowRunDto(
         String conclusion,
         String event,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        String actorLogin
 ) {}

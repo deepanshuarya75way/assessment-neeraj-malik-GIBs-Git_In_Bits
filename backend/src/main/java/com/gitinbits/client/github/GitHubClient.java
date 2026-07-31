@@ -54,6 +54,9 @@ public interface GitHubClient {
     /** GET /repos/{org}/{repo}/commits — all commits on the default branch */
     List<RawCommit> listCommits(String org, String repo);
 
+    /** GET /repos/{org}/{repo}/commits/{sha} — single commit with stats */
+    RawCommit getCommit(String org, String repo, String sha);
+
     // ─── Pull Requests ────────────────────────────────────────────────────────
 
     /** GET /repos/{org}/{repo}/pulls?state=all — all pull requests */

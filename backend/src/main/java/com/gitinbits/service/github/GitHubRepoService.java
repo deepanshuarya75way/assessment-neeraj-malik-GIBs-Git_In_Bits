@@ -69,6 +69,11 @@ public class GitHubRepoService {
                 .toList();
     }
 
+    public CommitDto getCommit(GitHubContext context, String repo, String sha) {
+        log.debug("Fetching detailed commit stats for: {}/{} sha: {}", context.accountName(), repo, sha);
+        return toCommitDto(gitHubClient.getCommit(context.accountName(), repo, sha));
+    }
+
     // ─── Pull Requests ────────────────────────────────────────────────────────
 
     public List<PullRequestDto> listPulls(GitHubContext context, String repo) {
@@ -124,6 +129,14 @@ public class GitHubRepoService {
         return gitHubClient.listReleases(context.accountName(), repo)
                 .stream()
                 .map(this::toReleaseDto)
+                .toList();
+    }
+
+    public List<WorkflowRunDto> listWorkflowRuns(GitHubContext context, String repo) {
+        log.debug("Listing workflow runs for: {}/{}", context.accountName(), repo);
+        return gitHubClient.listWorkflowRuns(context.accountName(), repo)
+                .stream()
+                .map(this::toWorkflowRunDto)
                 .toList();
     }
 
@@ -311,6 +324,19 @@ public class GitHubRepoService {
                 r.prerelease(),
                 r.publishedAt(),
                 r.author() != null ? r.author().login() : null
+        );
+    }
+
+    private WorkflowRunDto toWorkflowRunDto(RawWorkflowRun r) {
+        return new WorkflowRunDto(
+                r.name(),
+                r.headBranch(),
+                r.status(),
+                r.conclusion(),
+                r.event(),
+                r.createdAt(),
+                r.updatedAt(),
+                r.actor() != null ? r.actor().login() : null
         );
     }
 }
