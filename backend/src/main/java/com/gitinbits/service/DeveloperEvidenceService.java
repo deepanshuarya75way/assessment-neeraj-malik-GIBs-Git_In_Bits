@@ -37,6 +37,8 @@ public class DeveloperEvidenceService {
         this.workflowRunRepository = workflowRunRepository;
     }
 
+    public record OpenPrDetails(String title, String openTime) {}
+
     public record DeveloperEvidence(
             String authorName,
             long commitCount,
@@ -45,6 +47,7 @@ public class DeveloperEvidenceService {
             long prsOpened,
             long prsMerged,
             String avgMergeTime,
+            List<OpenPrDetails> activePrs,
             long reviewsConducted,
             long issuesResolved,
             long workflowFailures,
@@ -64,13 +67,19 @@ public class DeveloperEvidenceService {
         String sinceStr = java.time.format.DateTimeFormatter.ISO_INSTANT.format(since);
         String untilStr = java.time.format.DateTimeFormatter.ISO_INSTANT.format(until);
 
+        // Resolve GitHub login from the latest commit
+        CommitDoc latestCommit = commitRepository.findFirstByOwnerAndAuthorNameOrderByAuthorDateDesc(owner, authorName);
+        String githubLogin = (latestCommit != null && latestCommit.githubLogin() != null) 
+                ? latestCommit.githubLogin() 
+                : authorName;
+
         // 1. Commits Evidence
         List<CommitDoc> commits = commitRepository.findByOwnerAndAuthorNameAndAuthorDateBetweenOrderByAuthorDateDesc(owner, authorName, sinceStr, untilStr);
         long totalAdditions = commits.stream().mapToLong(c -> c.additions() != null ? c.additions() : 0).sum();
         long totalDeletions = commits.stream().mapToLong(c -> c.deletions() != null ? c.deletions() : 0).sum();
 
         // 2. PR Evidence
-        List<PullRequestDoc> prs = pullRequestRepository.findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, authorName, sinceStr, untilStr);
+        List<PullRequestDoc> prs = pullRequestRepository.findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, githubLogin, sinceStr, untilStr);
         long prsOpened = prs.size();
         List<PullRequestDoc> mergedPrs = prs.stream().filter(PullRequestDoc::merged).toList();
         long prsMerged = mergedPrs.size();
@@ -87,16 +96,47 @@ public class DeveloperEvidenceService {
                 }
             }
         }
-        String avgMergeTime = prsMerged > 0 ? (totalSeconds / prsMerged / 3600) + " hours" : "N/A";
+        String avgMergeTime = "N/A";
+        if (prsMerged > 0) {
+            long avgSeconds = totalSeconds / prsMerged;
+            if (avgSeconds < 60) {
+                avgMergeTime = avgSeconds + " secs";
+            } else if (avgSeconds < 3600) {
+                avgMergeTime = (avgSeconds / 60) + " mins";
+            } else if (avgSeconds < 86400) {
+                avgMergeTime = (avgSeconds / 3600) + " hrs " + ((avgSeconds % 3600) / 60) + " mins";
+            } else {
+                avgMergeTime = (avgSeconds / 86400) + " days " + ((avgSeconds % 86400) / 3600) + " hrs";
+            }
+        }
+
+        // Calculate open time for currently open PRs
+        List<PullRequestDoc> openPrsList = prs.stream().filter(pr -> "open".equalsIgnoreCase(pr.state())).toList();
+        List<OpenPrDetails> activePrs = new java.util.ArrayList<>();
+        for (PullRequestDoc pr : openPrsList) {
+            if (pr.createdAt() != null) {
+                try {
+                    Instant created = Instant.parse(pr.createdAt());
+                    long seconds = Duration.between(created, Instant.now()).getSeconds();
+                    String timeStr = "";
+                    if (seconds < 60) timeStr = seconds + " secs";
+                    else if (seconds < 3600) timeStr = (seconds / 60) + " mins";
+                    else if (seconds < 86400) timeStr = (seconds / 3600) + " hrs " + ((seconds % 3600) / 60) + " m";
+                    else timeStr = (seconds / 86400) + " days " + ((seconds % 86400) / 3600) + " h";
+                    
+                    activePrs.add(new OpenPrDetails(pr.title(), timeStr));
+                } catch (Exception e) {}
+            }
+        }
 
         // 3. Review Evidence
-        long reviewsConducted = reviewRepository.findByOwnerAndReviewerAndSubmittedAtBetweenOrderBySubmittedAtDesc(owner, authorName, sinceStr, untilStr).size();
+        long reviewsConducted = reviewRepository.findByOwnerAndReviewerAndSubmittedAtBetweenOrderBySubmittedAtDesc(owner, githubLogin, sinceStr, untilStr).size();
 
         // 4. Issue Evidence
-        long issuesAssigned = issueRepository.findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, authorName, sinceStr, untilStr).size();
+        long issuesAssigned = issueRepository.findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, githubLogin, sinceStr, untilStr).size();
 
         // 5. Workflow Evidence
-        List<com.gitinbits.persistence.document.WorkflowRunDoc> runs = workflowRunRepository.findByOwnerAndActorLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, authorName, sinceStr, untilStr);
+        List<com.gitinbits.persistence.document.WorkflowRunDoc> runs = workflowRunRepository.findByOwnerAndActorLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(owner, githubLogin, sinceStr, untilStr);
         long workflowFailures = runs.stream().filter(r -> "failure".equalsIgnoreCase(r.conclusion())).count();
         long workflowSuccesses = runs.stream().filter(r -> "success".equalsIgnoreCase(r.conclusion())).count();
 
@@ -108,6 +148,7 @@ public class DeveloperEvidenceService {
                 prsOpened,
                 prsMerged,
                 avgMergeTime,
+                activePrs,
                 reviewsConducted,
                 issuesAssigned,
                 workflowFailures,

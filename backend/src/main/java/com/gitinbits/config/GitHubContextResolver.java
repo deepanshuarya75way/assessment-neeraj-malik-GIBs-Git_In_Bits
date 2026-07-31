@@ -47,14 +47,7 @@ public class GitHubContextResolver implements HandlerMethodArgumentResolver {
         String accountName = value;
         String repositoryName = null;
 
-        if (type == DataSourceType.PUBLIC_REPOSITORY) {
-            String[] parts = value.split("/");
-            if (parts.length != 2) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid repository format. Expected owner/repo.");
-            }
-            accountName = parts[0];
-            repositoryName = parts[1];
-        }
+
 
         return new GitHubContext(type, accountName, repositoryName);
     }

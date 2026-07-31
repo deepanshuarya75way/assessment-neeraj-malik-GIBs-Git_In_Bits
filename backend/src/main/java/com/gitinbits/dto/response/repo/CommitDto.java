@@ -23,6 +23,7 @@ public record CommitDto(
         String authorEmail,
         String committerName,
         String committerEmail,
+        String githubLogin,
         String message,
         String timestamp,
         String url,

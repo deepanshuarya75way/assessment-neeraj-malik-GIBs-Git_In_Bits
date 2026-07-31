@@ -6,9 +6,9 @@ import jakarta.validation.constraints.NotNull;
 /**
  * Unified context representing the source of GitHub data requested by the frontend.
  *
- * @param sourceType     The type of data source (e.g., AUTHENTICATED_ORGANIZATION, PUBLIC_REPOSITORY)
+ * @param sourceType     The type of data source (e.g., AUTHENTICATED_ORGANIZATION, PUBLIC_ORGANIZATION)
  * @param accountName    The name of the organization or repository owner
- * @param repositoryName The name of the repository (only present if sourceType is PUBLIC_REPOSITORY)
+ * @param repositoryName The name of the repository (if applicable)
  */
 public record GitHubContext(
         @NotNull DataSourceType sourceType,

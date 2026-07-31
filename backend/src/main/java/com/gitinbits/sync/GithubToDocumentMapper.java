@@ -73,6 +73,7 @@ public class GithubToDocumentMapper {
                 dto.committerName(),
                 dto.committerEmail(),
                 dto.timestamp(),
+                dto.githubLogin(),
                 dto.additions(),
                 dto.deletions(),
                 syncTime

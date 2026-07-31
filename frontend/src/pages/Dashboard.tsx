@@ -3,7 +3,7 @@ import { EntityHeader } from '../components/common/EntityHeader';
 import { Card, CardHeader } from '../components/ui/Card';
 import { useDataSource } from '../context/DataSourceContext';
 import { Database, CheckCircle2, Sparkles, RefreshCw, Briefcase, CheckSquare, AlertTriangle } from 'lucide-react';
-import { useRepos, useTeams, useSystemCoverage } from '../api/queries';
+import { useRepos, useTeams } from '../api/queries';
 import { useOrganizationSummary, useGenerateOrgSummary, useOrganizationEvidence } from '../api/dashboardService';
 import { Spinner } from '../components/ui/Spinner';
 
@@ -13,7 +13,6 @@ export function Dashboard() {
   
   const { data: repos } = useRepos();
   const { data: teams } = useTeams();
-  const { data: coverageData } = useSystemCoverage();
   
   const { data: orgSummary, isLoading: summaryLoading, refetch: refetchSummary } = useOrganizationSummary(sourceValue || '', timeframe);
   const { data: orgEvidence, isLoading: evidenceLoading } = useOrganizationEvidence(sourceValue || '', timeframe);
@@ -42,8 +41,6 @@ export function Dashboard() {
     { label: 'Total Watchers', value: totalWatchers },
   ];
 
-  const percentage = coverageData?.coveragePercentage || 81; // Fallback
-  const isComplete = percentage === 100;
 
   return (
     <div className="space-y-8">
@@ -193,46 +190,6 @@ export function Dashboard() {
         </div>
       </section>
 
-      {/* Data Coverage Progress */}
-      <section>
-        <Card className="bg-surface border-border overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <CheckCircle2 className="w-6 h-6 text-green-500" />
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary">GitHub Metadata Coverage</h3>
-                  <p className="text-sm text-text-secondary">{coverageData?.description || 'Validation of backend endpoint capabilities.'}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-green-500">{percentage}%</div>
-                <div className="text-xs text-text-secondary">{isComplete ? 'All categories retrieved' : 'Missing some categories'}</div>
-              </div>
-            </div>
-            
-            <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 transition-all duration-1000 ease-in-out" 
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-            
-            <div className="mt-6 flex flex-wrap gap-2">
-              {['Organization', 'Teams', 'Repository', 'Branch', 'Commit', 'Pull Request', 'Review', 'Review Comments', 'Commit Comments', 'Issues', 'Issue Comments', 'Contributors', 'Releases', 'Languages', 'Topics', 'Labels', 'Milestones', 'Deployments', 'Workflow Runs', 'GitHub Actions', 'Branch Protection', 'Collaborators', 'Rulesets'].map(c => (
-                <span key={c} className="text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full">
-                  {c}
-                </span>
-              ))}
-              {coverageData?.missingCapabilities?.map((c: string) => (
-                <span key={c} className="text-[10px] px-2 py-1 bg-slate-800 text-text-muted border border-border rounded-full">
-                  {c}
-                </span>
-              ))}
-            </div>
-          </div>
-        </Card>
-      </section>
     </div>
   );
 }

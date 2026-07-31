@@ -243,15 +243,7 @@ export const useCapabilities = () => {
   });
 };
 
-export const useSystemCoverage = () => {
-  return useQuery({
-    queryKey: ['systemCoverage'],
-    queryFn: async () => {
-      const { data } = await apiClient.get<any>('/api/system/coverage');
-      return data;
-    },
-  });
-};
+
 
 export const useMetadataDictionary = () => {
   return useQuery({

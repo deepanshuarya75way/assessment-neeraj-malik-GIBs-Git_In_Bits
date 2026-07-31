@@ -15,6 +15,7 @@ public interface CommitRepository extends MongoRepository<CommitDoc, String> {
     
     // Cross-repo aggregation methods
     List<CommitDoc> findByOwnerAndAuthorNameOrderByAuthorDateDesc(String owner, String authorName);
+    CommitDoc findFirstByOwnerAndAuthorNameOrderByAuthorDateDesc(String owner, String authorName);
     List<CommitDoc> findByOwnerOrderByAuthorDateDesc(String owner);
     List<CommitDoc> findByOwnerAndAuthorDateBetweenOrderByAuthorDateDesc(String owner, String start, String end);
     List<CommitDoc> findByOwnerAndAuthorNameAndAuthorDateBetweenOrderByAuthorDateDesc(String owner, String authorName, String start, String end);
@@ -22,7 +23,7 @@ public interface CommitRepository extends MongoRepository<CommitDoc, String> {
     @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
         "{ '$match': { 'owner': ?0 } }",
         "{ '$sort': { 'authorDate': -1 } }",
-        "{ '$group': { '_id': '$authorName', 'commitCount': { '$sum': 1 }, 'latestCommitDate': { '$first': '$authorDate' }, 'latestCommitMessage': { '$first': '$message' } } }",
+        "{ '$group': { '_id': '$authorName', 'commitCount': { '$sum': 1 }, 'latestCommitDate': { '$first': '$authorDate' }, 'latestCommitMessage': { '$first': '$message' }, 'githubLogin': { '$first': '$githubLogin' } } }",
         "{ '$sort': { 'commitCount': -1 } }"
     })
     List<com.gitinbits.dto.response.repo.DeveloperActivitySummaryDto> getDeveloperActivitySummary(String owner);

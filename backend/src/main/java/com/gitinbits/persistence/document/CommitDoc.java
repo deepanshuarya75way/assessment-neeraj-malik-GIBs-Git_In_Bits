@@ -20,6 +20,7 @@ public record CommitDoc(
         String committerName,
         String committerEmail,
         String committerDate,
+        String githubLogin,
         Integer additions,
         Integer deletions,
         Instant synchronizedAt

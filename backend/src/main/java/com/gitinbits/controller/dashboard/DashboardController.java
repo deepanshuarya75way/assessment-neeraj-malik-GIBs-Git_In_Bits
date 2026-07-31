@@ -69,9 +69,10 @@ public class DashboardController {
     @GetMapping("/developers/{authorName}/ai-report")
     public ResponseEntity<Map<String, String>> getDeveloperAiReport(
             @RequestParam String owner,
-            @PathVariable String authorName
+            @PathVariable String authorName,
+            @RequestParam(defaultValue = "30_days") String timeframe
     ) {
-        String report = aiDashboardService.generateDeveloperEfficiencyReport(owner, authorName);
+        String report = aiDashboardService.generateDeveloperEfficiencyReport(owner, authorName, timeframe);
         return ResponseEntity.ok(Map.of("report", report));
     }
     
@@ -87,6 +88,7 @@ public class DashboardController {
         else if (timeframe.startsWith("7_")) days = 7;
         else if (timeframe.startsWith("10_")) days = 10;
         else if (timeframe.startsWith("30_")) days = 30;
+        else if (timeframe.equals("lifetime")) days = 36500; // 100 years
         
         java.time.Instant until = java.time.Instant.now();
         java.time.Instant since = until.minus(java.time.Duration.ofDays(days));

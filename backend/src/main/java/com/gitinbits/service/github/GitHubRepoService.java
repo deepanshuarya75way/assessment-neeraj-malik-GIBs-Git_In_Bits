@@ -32,9 +32,6 @@ public class GitHubRepoService {
     @Cacheable("repos")
     public List<RepoDto> listRepos(GitHubContext context) {
         log.debug("Listing repositories for account: {}", context.accountName());
-        if (context.sourceType() == DataSourceType.PUBLIC_REPOSITORY) {
-            return List.of(toRepoDto(gitHubClient.getRepository(context.accountName(), context.repositoryName())));
-        }
         return gitHubClient.listRepositories(context.accountName())
                 .stream()
                 .map(this::toRepoDto)
@@ -186,6 +183,7 @@ public class GitHubRepoService {
         String authorEmail    = data != null && data.author()    != null ? data.author().email()   : null;
         String committerName  = data != null && data.committer() != null ? data.committer().name()  : null;
         String committerEmail = data != null && data.committer() != null ? data.committer().email() : null;
+        String githubLogin    = r.author() != null ? r.author().login() : null;
         String message        = data != null ? data.message() : null;
         String timestamp      = data != null && data.author() != null ? data.author().date() : null;
 
@@ -208,6 +206,7 @@ public class GitHubRepoService {
                 authorEmail,
                 committerName,
                 committerEmail,
+                githubLogin,
                 message,
                 timestamp,
                 r.htmlUrl(),

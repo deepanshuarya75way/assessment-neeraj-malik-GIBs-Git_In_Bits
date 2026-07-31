@@ -47,6 +47,7 @@ public class DocumentToDtoMapper {
                 doc.authorEmail(),
                 doc.committerName(),
                 doc.committerEmail(),
+                doc.githubLogin(),
                 doc.message(),
                 doc.authorDate(),
                 null, // url

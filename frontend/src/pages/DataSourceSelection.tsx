@@ -9,7 +9,6 @@ export function DataSourceSelection() {
   const { setDataSource } = useDataSource();
 
   const [orgInput, setOrgInput] = useState('');
-  const [repoInput, setRepoInput] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleMyOrgs = () => {
@@ -40,21 +39,6 @@ export function DataSourceSelection() {
     navigate('/dashboard');
   };
 
-  const handlePublicRepo = () => {
-    if (!repoInput.trim()) {
-      setError('Repository is required.');
-      return;
-    }
-    const parts = repoInput.trim().split('/');
-    if (parts.length !== 2 || !parts[0] || !parts[1]) {
-      setError('Repository format must be: owner/repository');
-      return;
-    }
-    setError(null);
-    setDataSource(DataSourceType.PUBLIC_REPOSITORY, repoInput.trim());
-    navigate('/dashboard');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
       <div className="max-w-7xl w-full space-y-8">
@@ -77,7 +61,7 @@ export function DataSourceSelection() {
           </div>
         )}
 
-        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 max-w-4xl mx-auto">
           {/* Card 1: My Organizations */}
           <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col h-full border border-gray-200">
             <div className="p-6 flex-grow">
@@ -131,40 +115,6 @@ export function DataSourceSelection() {
               </button>
             </div>
           </div>
-
-          {/* Card 3: Public Repository */}
-          <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col h-full border border-gray-200">
-            <div className="p-6 flex-grow">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white mx-auto mb-4">
-                <GitPullRequest className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900 text-center mb-2">Public Repository</h3>
-              <p className="text-sm text-gray-500 text-center mb-6">
-                Explore a specific public repository.
-              </p>
-              <div>
-                <label htmlFor="repo-input" className="sr-only">Repository Name</label>
-                <input
-                  type="text"
-                  id="repo-input"
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                  placeholder="spring-projects/spring-framework"
-                  value={repoInput}
-                  onChange={(e) => setRepoInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handlePublicRepo()}
-                />
-              </div>
-            </div>
-            <div className="bg-gray-50 px-6 py-4">
-              <button
-                onClick={handlePublicRepo}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-              >
-                Load Repository
-              </button>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>

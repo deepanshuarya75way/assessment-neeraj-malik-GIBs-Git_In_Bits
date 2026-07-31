@@ -123,13 +123,18 @@ public class RepositorySynchronizer {
                 .collect(Collectors.toList());
         pullRequestRepository.saveAll(prDocs);
 
+        int prLimitCount = 0;
         for (PullRequestDto pr : pullRequests) {
+            if (prLimitCount >= 200) {
+                break;
+            }
             List<ReviewDto> reviews = githubRepoService.listReviews(context, repoName, pr.number());
             List<ReviewDoc> reviewDocs = reviews.stream()
                     .map(dto -> mapper.toReviewDoc(dto, repoFullName, pr.number(), syncTime))
                     .collect(Collectors.toList());
             reviewRepository.saveAll(reviewDocs);
             reviewCount += reviewDocs.size();
+            prLimitCount++;
         }
 
         // Map and Save Issues

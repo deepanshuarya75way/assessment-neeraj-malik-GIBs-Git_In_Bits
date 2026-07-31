@@ -55,12 +55,12 @@ export const useTopDevelopers = (owner: string) => {
   });
 };
 
-export const useDeveloperAiReport = (owner: string, authorName: string) => {
+export const useDeveloperAiReport = (owner: string, authorName: string, timeframe: string) => {
   return useQuery({
-    queryKey: ['devAiReport', owner, authorName],
+    queryKey: ['devAiReport', owner, authorName, timeframe],
     queryFn: async () => {
-      const { data } = await apiClient.get<{report: string}>(`/api/dashboard/developers/${authorName}/ai-report`, {
-        params: { owner }
+      const { data } = await apiClient.get<{report: string}>(`/api/dashboard/developers/${encodeURIComponent(authorName)}/ai-report`, {
+        params: { owner, timeframe }
       });
       return data;
     },
@@ -77,18 +77,19 @@ export interface DeveloperEvidence {
   prsOpened: number;
   prsMerged: number;
   avgMergeTime: string;
+  activePrs: { title: string; openTime: string }[];
   reviewsConducted: number;
   issuesResolved: number;
   workflowFailures: number;
   workflowSuccesses: number;
 }
 
-export const useDeveloperEvidence = (owner: string, authorName: string) => {
+export const useDeveloperEvidence = (owner: string, authorName: string, timeframe: string) => {
   return useQuery({
-    queryKey: ['devEvidence', owner, authorName],
+    queryKey: ['devEvidence', owner, authorName, timeframe],
     queryFn: async () => {
-      const { data } = await apiClient.get<DeveloperEvidence>(`/api/dashboard/developers/${authorName}/evidence`, {
-        params: { owner }
+      const { data } = await apiClient.get<DeveloperEvidence>(`/api/dashboard/developers/${encodeURIComponent(authorName)}/evidence`, {
+        params: { owner, timeframe }
       });
       return data;
     },

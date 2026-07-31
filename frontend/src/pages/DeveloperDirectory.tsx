@@ -12,15 +12,19 @@ export function DeveloperDirectory() {
   const { data: developers, isLoading: devsLoading } = useTopDevelopers(sourceValue || '');
   
   const [selectedDev, setSelectedDev] = useState<string | null>(null);
+  const [isPrDropdownOpen, setIsPrDropdownOpen] = useState(false);
+  const [aiTimeframe, setAiTimeframe] = useState<string>('30_days');
 
   const { data: evidence, isLoading: evidenceLoading } = useDeveloperEvidence(
     sourceValue || '', 
-    selectedDev || ''
+    selectedDev || '',
+    'lifetime'
   );
 
   const { data: aiReport, isLoading: reportLoading } = useDeveloperAiReport(
     sourceValue || '', 
-    selectedDev || ''
+    selectedDev || '',
+    aiTimeframe
   );
 
   return (
@@ -52,7 +56,7 @@ export function DeveloperDirectory() {
             >
               <div className="flex items-center space-x-4">
                 <img 
-                  src={`https://github.com/${dev.id}.png`} 
+                  src={`https://github.com/${dev.githubLogin || dev.id}.png`} 
                   alt={dev.id} 
                   className="w-12 h-12 rounded-full border border-slate-600 bg-slate-800"
                   onError={(e) => {
@@ -85,22 +89,27 @@ export function DeveloperDirectory() {
         <div className="w-full lg:w-2/3 flex flex-col">
           {selectedDev ? (
             <Card className="flex-1 bg-surface border-border overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-border bg-slate-800/30">
-                <div className="flex items-center space-x-4">
-                  <img 
-                    src={`https://github.com/${selectedDev}.png`} 
-                    alt={selectedDev} 
-                    className="w-16 h-16 rounded-full border-2 border-blue-500"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedDev}&background=0D8ABC&color=fff`;
-                    }}
-                  />
-                  <div>
-                    <h2 className="text-2xl font-bold text-text-primary">{selectedDev}</h2>
-                    <p className="text-slate-400">Developer Profile & Efficiency Analysis</p>
-                  </div>
-                </div>
-              </div>
+                  {(() => {
+                    const devInfo = developers?.find(d => d.id === selectedDev);
+                    return (
+                      <div className="p-6 border-b border-border bg-slate-800/30">
+                        <div className="flex items-center space-x-4">
+                          <img 
+                            src={`https://github.com/${devInfo?.githubLogin || selectedDev}.png`} 
+                            alt={selectedDev} 
+                            className="w-16 h-16 rounded-full border-2 border-blue-500 bg-slate-800"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${selectedDev}&background=0D8ABC&color=fff`;
+                            }}
+                          />
+                          <div>
+                            <h2 className="text-2xl font-bold text-text-primary">{selectedDev}</h2>
+                            <p className="text-slate-400">Developer Profile & Efficiency Analysis</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 
@@ -130,12 +139,37 @@ export function DeveloperDirectory() {
                       </div>
                       <Activity className="w-8 h-8 text-indigo-500/50" />
                     </div>
-                    <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Impact</p>
-                        <p className="text-lg font-bold text-amber-400">{evidence.reviewsConducted} <span className="text-sm font-normal text-slate-500">rev</span> / {evidence.issuesResolved} <span className="text-sm font-normal text-slate-500">iss</span></p>
+                    <div className="relative">
+                      <div 
+                        className={`bg-slate-800/50 p-4 rounded-lg border flex items-center justify-between transition-colors ${evidence.activePrs.length > 1 ? 'cursor-pointer hover:bg-slate-800 border-slate-600' : 'border-slate-700'}`}
+                        onClick={() => {
+                          if (evidence.activePrs.length > 1) {
+                            setIsPrDropdownOpen(!isPrDropdownOpen);
+                          }
+                        }}
+                      >
+                        <div>
+                          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Opened PRs</p>
+                          <p className="text-lg font-bold text-amber-400">{evidence.activePrs.length} <span className="text-sm font-normal text-slate-500">active</span></p>
+                          {evidence.activePrs.length === 1 && (
+                            <p className="text-xs text-slate-500 mt-1 truncate max-w-[100px]" title={evidence.activePrs[0].title}>
+                              {evidence.activePrs[0].openTime} - {evidence.activePrs[0].title}
+                            </p>
+                          )}
+                        </div>
+                        <AlertTriangle className="w-8 h-8 text-amber-500/50" />
                       </div>
-                      <CheckCircle2 className="w-8 h-8 text-amber-500/50" />
+                      
+                      {isPrDropdownOpen && evidence.activePrs.length > 1 && (
+                        <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800/95 backdrop-blur border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden">
+                          {evidence.activePrs.map((pr, idx) => (
+                            <div key={idx} className="p-3 border-b border-slate-700/50 last:border-0 hover:bg-slate-700/50 transition-colors">
+                              <p className="text-xs text-amber-400 font-bold mb-1">{pr.openTime} open</p>
+                              <p className="text-sm text-slate-300 truncate" title={pr.title}>{pr.title}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : null}
@@ -143,10 +177,24 @@ export function DeveloperDirectory() {
                 {/* AI Coaching Brief */}
                 <div className="bg-blue-900/10 rounded-xl border border-blue-900/50 p-6 flex flex-col h-full">
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4 flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      AI Coaching & Efficiency Brief
-                    </h3>
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                      <div className="flex items-center space-x-2">
+                        <Sparkles className="w-5 h-5 text-blue-400" />
+                        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">AI Coaching & Efficiency Brief</h3>
+                      </div>
+                      <select
+                        value={aiTimeframe}
+                        onChange={(e) => setAiTimeframe(e.target.value)}
+                        className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-md px-2 py-1 outline-none focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="1_day" className="bg-slate-800 text-slate-200">Yesterday</option>
+                        <option value="3_days" className="bg-slate-800 text-slate-200">Last 3 Days</option>
+                        <option value="7_days" className="bg-slate-800 text-slate-200">Last 7 Days</option>
+                        <option value="10_days" className="bg-slate-800 text-slate-200">Last 10 Days</option>
+                        <option value="30_days" className="bg-slate-800 text-slate-200">Last 30 Days</option>
+                        <option value="lifetime" className="bg-slate-800 text-slate-200">Lifetime</option>
+                      </select>
+                    </div>
                     
                     {reportLoading ? (
                       <div className="flex flex-col items-center justify-center py-8 space-y-4">

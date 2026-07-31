@@ -83,16 +83,28 @@ public class AiDashboardService {
         log.info("Saved Org Brief for {} timeframe {}", owner, timeframe);
     }
 
-    public String generateDeveloperEfficiencyReport(String owner, String authorName) {
-        log.info("Generating efficiency report for developer: {}", authorName);
+    public String generateDeveloperEfficiencyReport(String owner, String authorName, String timeframe) {
+        log.info("Generating efficiency report for developer: {} over timeframe: {}", authorName, timeframe);
         
-        DeveloperEvidenceService.DeveloperEvidence evidence = devEvidenceService.gatherEvidence(owner, authorName);
+        int days = 30;
+        if (timeframe.startsWith("1_")) days = 1;
+        else if (timeframe.startsWith("3_")) days = 3;
+        else if (timeframe.startsWith("7_")) days = 7;
+        else if (timeframe.startsWith("10_")) days = 10;
+        else if (timeframe.startsWith("30_")) days = 30;
+        else if (timeframe.equals("lifetime")) days = 36500;
+        
+        Instant until = Instant.now();
+        Instant since = until.minus(java.time.Duration.ofDays(days));
+        
+        DeveloperEvidenceService.DeveloperEvidence evidence = devEvidenceService.gatherEvidence(owner, authorName, since, until);
         
         if (evidence.commitCount() == 0 && evidence.prsOpened() == 0) {
             return "No recent activity found for this developer.";
         }
 
-        String prompt = "You are an Engineering Manager. Here is the deterministic evidence for developer " + authorName + ":\n" +
+        String timeframeStr = timeframe.equals("lifetime") ? "lifetime" : days + " days";
+        String prompt = "You are an Engineering Manager. Here is the deterministic evidence for developer " + authorName + " over the last " + timeframeStr + ":\n" +
                 "- Commits: " + evidence.commitCount() + " (Additions: " + evidence.totalAdditions() + " | Deletions: " + evidence.totalDeletions() + ")\n" +
                 "- PRs: " + evidence.prsOpened() + " Opened, " + evidence.prsMerged() + " Merged. (Avg Time to Merge: " + evidence.avgMergeTime() + ").\n" +
                 "- Code Reviews Conducted: " + evidence.reviewsConducted() + ".\n" +

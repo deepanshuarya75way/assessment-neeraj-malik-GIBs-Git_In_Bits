@@ -23,7 +23,8 @@ public record RawCommit(
         @JsonProperty("html_url") String htmlUrl,
         @JsonProperty("parents") java.util.List<Parent> parents,
         @JsonProperty("stats") Stats stats,
-        @JsonProperty("files") java.util.List<File> files
+        @JsonProperty("files") java.util.List<File> files,
+        @JsonProperty("author") RawUser author
 ) {
 
     @JsonIgnoreProperties(ignoreUnknown = true)

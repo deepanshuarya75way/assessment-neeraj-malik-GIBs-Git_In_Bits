@@ -58,7 +58,7 @@ public class RepositoryAnalysisTools {
     public Function<RepositoryRequest, RepositoryAnalysisReport> getRepositoryAnalytics() {
         return request -> {
             log.info("AI Orchestrator invoked getRepositoryAnalytics tool for repo: {}/{}", request.owner(), request.repoName());
-            GitHubContext context = new GitHubContext(com.gitinbits.dto.context.DataSourceType.PUBLIC_REPOSITORY, request.owner(), request.repoName());
+            GitHubContext context = new GitHubContext(com.gitinbits.dto.context.DataSourceType.PUBLIC_ORGANIZATION, request.owner(), request.repoName());
             return analysisService.analyzeRepository(context, request.repoName());
         };
     }
