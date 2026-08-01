@@ -14,4 +14,5 @@ public interface PullRequestRepository extends MongoRepository<PullRequestDoc, S
     List<PullRequestDoc> findByOwnerAndUserLoginOrderByUpdatedAtDesc(String owner, String userLogin);
     List<PullRequestDoc> findByOwnerAndUserLoginAndUpdatedAtBetweenOrderByUpdatedAtDesc(String owner, String userLogin, String start, String end);
     List<PullRequestDoc> findByOwnerAndUpdatedAtBetweenOrderByUpdatedAtDesc(String owner, String start, String end);
+    long countByOwnerAndStateIgnoreCase(String owner, String state);
 }

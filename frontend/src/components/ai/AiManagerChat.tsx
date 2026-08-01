@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiClient } from '../../api/client';
-import ReactMarkdown from 'react-markdown';
+import { AIReportMarkdown } from './AIReportMarkdown';
 import remarkGfm from 'remark-gfm';
 import { X, Send, Loader2 } from 'lucide-react';
 
@@ -129,9 +129,7 @@ export function AiManagerChat() {
                     msg.content
                   ) : (
                     <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#0a0f18] prose-pre:border prose-pre:border-white/10 prose-pre:shadow-inner prose-a:text-blue-400 break-words overflow-x-auto whitespace-pre-wrap">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.content}
-                      </ReactMarkdown>
+                      <AIReportMarkdown content={msg.content} remarkPlugins={[remarkGfm]} />
                     </div>
                   )}
                 </div>

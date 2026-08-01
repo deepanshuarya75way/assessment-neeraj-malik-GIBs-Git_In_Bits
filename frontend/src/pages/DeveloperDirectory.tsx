@@ -4,9 +4,8 @@ import { useTopDevelopers, useDeveloperAiReport, useDeveloperEvidence } from '..
 import { EntityHeader } from '../components/common/EntityHeader';
 import { Spinner } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
-import { Users, GitCommit, Clock, Sparkles, Activity, CheckCircle2, GitMerge, AlertTriangle } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-
+import { Sparkles, Activity, CheckCircle2, GitMerge, AlertTriangle, Users, GitCommit, Clock } from 'lucide-react';
+import { AIReportMarkdown } from '../components/ai/AIReportMarkdown';
 export function DeveloperDirectory() {
   const { sourceValue } = useDataSource();
   const { data: developers, isLoading: devsLoading } = useTopDevelopers(sourceValue || '');
@@ -202,8 +201,8 @@ export function DeveloperDirectory() {
                         <p className="text-slate-400 animate-pulse">Analyzing cross-repo evidence...</p>
                       </div>
                     ) : aiReport ? (
-                      <div className="prose prose-invert prose-blue max-w-none text-slate-300">
-                        <ReactMarkdown>{aiReport.report}</ReactMarkdown>
+                      <div className="prose prose-invert prose-blue max-w-none text-slate-300 text-sm leading-relaxed font-light prose-p:mb-3 prose-h4:text-base prose-h4:font-semibold prose-h4:text-blue-300 prose-h4:mt-4 prose-h4:mb-2 prose-strong:font-bold prose-strong:text-white prose-li:my-0.5 prose-li:marker:text-blue-500">
+                        <AIReportMarkdown content={aiReport.report} />
                       </div>
                     ) : (
                       <div className="flex items-center space-x-2 text-rose-400">

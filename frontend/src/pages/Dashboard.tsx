@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { EntityHeader } from '../components/common/EntityHeader';
-import { Card, CardHeader } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { useDataSource } from '../context/DataSourceContext';
-import { Database, CheckCircle2, Sparkles, RefreshCw, Briefcase, CheckSquare, AlertTriangle } from 'lucide-react';
-import { useRepos, useTeams } from '../api/queries';
-import { useOrganizationSummary, useGenerateOrgSummary, useOrganizationEvidence } from '../api/dashboardService';
+import { CheckCircle2, Sparkles, RefreshCw, Briefcase, CheckSquare, AlertTriangle } from 'lucide-react';
+
+import { useOrganizationSummary, useGenerateOrgSummary, useOrganizationEvidence, useTopDevelopers } from '../api/dashboardService';
 import { Spinner } from '../components/ui/Spinner';
+import { AIReportMarkdown } from '../components/ai/AIReportMarkdown';
+import { KpiSummaryRow } from '../components/dashboard/KpiSummaryRow';
+
 
 export function Dashboard() {
   const { sourceValue } = useDataSource();
   const [timeframe, setTimeframe] = useState('30_days');
   
-  const { data: repos } = useRepos();
-  const { data: teams } = useTeams();
-  
   const { data: orgSummary, isLoading: summaryLoading, refetch: refetchSummary } = useOrganizationSummary(sourceValue || '', timeframe);
   const { data: orgEvidence, isLoading: evidenceLoading } = useOrganizationEvidence(sourceValue || '', timeframe);
+  const { data: developers } = useTopDevelopers(sourceValue || '');
   const { mutate: generateSummary, isPending: generating } = useGenerateOrgSummary();
 
   const handleGenerate = () => {
@@ -24,75 +25,81 @@ export function Dashboard() {
     });
   };
 
-  const repoCount = repos?.length || 0;
-  const teamCount = teams?.length || 0;
-  
-  const totalOpenIssues = repos?.reduce((acc, repo) => acc + (repo.openIssuesCount || 0), 0) || 0;
-  const totalForks = repos?.reduce((acc, repo) => acc + (repo.forksCount || 0), 0) || 0;
-  const totalStars = repos?.reduce((acc, repo) => acc + (repo.stargazersCount || 0), 0) || 0;
-  const totalWatchers = repos?.reduce((acc, repo) => acc + (repo.watchersCount || 0), 0) || 0;
-
-  const stats = [
-    { label: 'Repositories', value: repoCount },
-    { label: 'Teams', value: teamCount },
-    { label: 'Open Issues', value: totalOpenIssues },
-    { label: 'Total Forks', value: totalForks },
-    { label: 'Total Stars', value: totalStars },
-    { label: 'Total Watchers', value: totalWatchers },
-  ];
-
 
   return (
     <div className="space-y-8">
-      <EntityHeader
-        title={`Dashboard: ${sourceValue}`}
-        description="Technical validation of GitHub API metadata coverage."
-      />
-      
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-700/50 pb-6">
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <Briefcase className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">Organization Overview</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            {sourceValue}
+          </h1>
+        </div>
+        <div className="flex space-x-2">
+          <select 
+            className="bg-slate-800 border border-slate-700 text-sm rounded px-3 py-1.5 text-slate-300 focus:outline-none focus:border-blue-500 shadow-inner"
+            value={timeframe}
+            onChange={(e) => setTimeframe(e.target.value)}
+          >
+            <option value="1_day">Yesterday</option>
+            <option value="3_days">Last 3 Days</option>
+            <option value="7_days">Last 7 Days</option>
+            <option value="10_days">Last 10 Days</option>
+            <option value="30_days">Last 30 Days</option>
+          </select>
+        </div>
+      </div>
+
+      {/* KPI Hero Section */}
+      <section>
+        <KpiSummaryRow 
+          totalCommits={orgEvidence?.totalCommits ?? 0}
+          totalPrsMerged={orgEvidence?.totalPrsMerged ?? 0}
+          totalIssuesClosed={orgEvidence?.totalIssuesClosed ?? 0}
+          totalWorkflowFailures={orgEvidence?.totalWorkflowFailures ?? 0}
+          activePrCount={orgEvidence?.activePrCount ?? 0}
+          activeDeveloperCount={developers?.length ?? 0}
+          isLoading={evidenceLoading}
+        />
+      </section>
+
+
       {/* Level 1: AI Organization Dashboard */}
       <section>
-        <Card className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border-blue-800/50 overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Sparkles className="w-24 h-24" />
+        <Card className="bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] border-blue-900/30 overflow-hidden relative shadow-xl">
+          <div className="absolute top-0 right-0 p-8 opacity-5">
+            <Sparkles className="w-48 h-48" />
           </div>
-          <div className="p-6 relative z-10">
-            <div className="flex items-center justify-between mb-4">
+          <div className="p-8 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-5 h-5 text-blue-400" />
-                <h2 className="text-lg font-semibold text-blue-100">AI Daily Briefing</h2>
+                <h2 className="text-lg font-bold text-white tracking-tight">AI Executive Briefing</h2>
               </div>
-              <div className="flex space-x-2">
-                <select 
-                  className="bg-slate-800 border border-slate-700 text-sm rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-blue-500"
-                  value={timeframe}
-                  onChange={(e) => setTimeframe(e.target.value)}
-                >
-                  <option value="1_day">Yesterday</option>
-                  <option value="3_days">Last 3 Days</option>
-                  <option value="7_days">Last 7 Days</option>
-                  <option value="10_days">Last 10 Days</option>
-                  <option value="30_days">Last 30 Days</option>
-                </select>
-                <button 
-                  onClick={handleGenerate}
-                  disabled={generating}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm flex items-center transition-colors disabled:opacity-50"
-                >
-                  {generating ? <Spinner className="w-4 h-4 mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  Generate New
-                </button>
-              </div>
+              <button 
+                onClick={handleGenerate}
+                disabled={generating}
+                className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded text-sm flex items-center transition-colors disabled:opacity-50"
+              >
+                {generating ? <Spinner className="w-4 h-4 mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Generate Briefing
+              </button>
             </div>
-            
-            <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 min-h-[100px] flex items-center mb-6">
+
+            <div className="bg-[#1E293B]/60 p-6 rounded-xl border border-slate-700/50 min-h-[120px] flex items-start mb-6 shadow-inner backdrop-blur-sm transition-all duration-500">
               {summaryLoading ? (
-                <div className="w-full text-center text-slate-400 flex items-center justify-center">
-                  <Spinner className="w-5 h-5 mr-2" /> Loading latest briefing...
+                <div className="w-full text-center text-blue-400 flex flex-col items-center justify-center py-8 animate-pulse">
+                  <Spinner className="w-8 h-8 mb-4" /> 
+                  <span className="text-sm font-medium tracking-wide">Analyzing organization data...</span>
                 </div>
               ) : orgSummary ? (
-                <p className="text-slate-200 text-lg leading-relaxed font-light">
-                  {orgSummary.summaryText}
-                </p>
+                <div className="prose prose-invert prose-blue max-w-none w-full text-slate-300 text-sm leading-relaxed font-light prose-p:mb-3 prose-h4:text-base prose-h4:font-semibold prose-h4:text-blue-300 prose-h4:mt-4 prose-h4:mb-2 prose-strong:font-bold prose-strong:text-white prose-li:my-0.5 prose-li:marker:text-blue-500 animate-fade-in">
+                  <AIReportMarkdown content={orgSummary.summaryText} />
+                </div>
               ) : (
                 <p className="text-slate-400 italic text-center w-full">
                   No briefing generated yet. Click "Generate New" to run the nightly AI summary task immediately.
@@ -172,23 +179,7 @@ export function Dashboard() {
         </Card>
       </section>
 
-      {/* Metadata Statistics */}
-      <section>
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 flex items-center">
-          <Database className="w-4 h-4 mr-2" />
-          Real-Time Aggregated Statistics
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="bg-surface/50 border-border shadow-sm">
-              <CardHeader className="p-4 text-center">
-                <div className="text-2xl font-bold text-text-primary mb-1">{stat.value}</div>
-                <div className="text-xs text-text-muted">{stat.label}</div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </section>
+
 
     </div>
   );

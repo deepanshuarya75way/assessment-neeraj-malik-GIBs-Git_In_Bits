@@ -53,20 +53,29 @@ public class AiDashboardService {
         
         com.gitinbits.service.OrganizationEvidenceService.OrganizationEvidence evidence = orgEvidenceService.gatherEvidence(owner, since, until);
 
-        String prompt = "You are an executive assistant. Look at this deterministic evidence for the organization '" + owner + "' over the last " + days + " days:\n" +
+        String prompt = "You are an Engineering Intelligence Analyst for a GitHub organization. Look at this deterministic evidence for the organization '" + owner + "' over the last " + days + " days:\n" +
                 "- Active Workstreams: " + String.join(", ", evidence.activeWorkstreams()) + "\n" +
                 "- Recently Completed: " + String.join(", ", evidence.recentlyCompleted()) + "\n" +
                 "- Needs Attention: " + String.join(", ", evidence.needsAttention()) + "\n" +
                 "- Total PRs Merged: " + evidence.totalPrsMerged() + "\n" +
                 "- Total Issues Closed: " + evidence.totalIssuesClosed() + "\n" +
                 "- Total Workflow Failures: " + evidence.totalWorkflowFailures() + "\n\n" +
-                "Write a brief, 1-paragraph highly engaging summary of what the team worked on, what was completed, and any areas needing attention. " +
+                "Your job is to interpret this data and produce a concise, highly readable engineering report that tells a technical leader: What happened, what is going well, and what needs attention.\n" +
                 "CRITICAL INSTRUCTIONS:\n" +
-                "1. If multiple different repositories were worked on, you MUST mention them by name.\n" +
-                "2. The evidence uses [PR] and [Commit] tags to distinguish work types. Use this to understand the context. For example, explicitly call out open pull requests based on the [PR] tag, even if the title sounds generic (e.g., 'Create README.md').\n" +
-                "3. DO NOT include the '[PR]', '[Commit]', or 'RepoName:' prefixes in your final summary. Weave the information into natural, reader-friendly sentences (e.g. 'An open pull request to create a README in the DSA-Github repository is active.').\n" +
-                "4. Keep the entire summary under 4 sentences.";
+                "1. Structure the report EXACTLY with these markdown headers:\n" +
+                "   ### 🚨 Overall Status\n" +
+                "   ### 📊 What Happened\n" +
+                "   ### 🟢 What Is Going Well\n" +
+                "   ### 🟠 What Needs Attention\n" +
+                "   ### 💡 Key Takeaway\n" +
 
+                "2. Format the response entirely in Markdown. NEVER write a large dense paragraph. Prioritize insights over raw statistics. Use bullet points and short sentences.\n" +
+                "3. If multiple different repositories were worked on, mention them by name and bold them.\n" +
+                "4. The evidence uses [PR] and [Commit] tags to distinguish work types. DO NOT include these tags or 'RepoName:' prefixes in your final summary. Weave them naturally.\n" +
+                "5. Write like a senior engineering manager giving a morning briefing (analytical, direct, professional). Make it scannable in 15 seconds." +
+                "6. Keep it concise but deeply insightful." +
+                "7. DO NOT write a single dense paragraph. Break it down so it is highly scannable and easy to read.\n" +
+                "8. USe #### bold for subheadings";
         String aiSummary = chatClient.prompt()
                 .user(prompt)
                 .call()

@@ -104,6 +104,8 @@ export interface OrganizationEvidence {
   totalPrsMerged: number;
   totalIssuesClosed: number;
   totalWorkflowFailures: number;
+  totalCommits: number;
+  activePrCount: number;
 }
 
 export const useOrganizationEvidence = (owner: string, timeframe: string = '1_day') => {

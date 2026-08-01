@@ -1,0 +1,22 @@
+# Maven build output
+target/
+*.class
+*.jar
+
+# Node.js
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files (if you ever add a .env file locally)
+.env
+.env.local

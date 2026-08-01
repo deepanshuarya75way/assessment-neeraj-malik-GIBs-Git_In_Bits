@@ -34,7 +34,9 @@ public class OrganizationEvidenceService {
             List<String> needsAttention,
             long totalPrsMerged,
             long totalIssuesClosed,
-            long totalWorkflowFailures
+            long totalWorkflowFailures,
+            long totalCommits,
+            long activePrCount
     ) {}
 
     public OrganizationEvidence gatherEvidence(String owner, Instant since, Instant until) {
@@ -86,6 +88,9 @@ public class OrganizationEvidenceService {
         long totalMerged = recentPrs.stream().filter(PullRequestDoc::merged).count();
         long totalIssues = recentIssues.stream().filter(i -> "closed".equalsIgnoreCase(i.state())).count();
         long totalFailures = recentWorkflows.stream().filter(w -> "failure".equalsIgnoreCase(w.conclusion())).count();
+        long totalCommits = recentCommits.size();
+        // Count ALL currently open PRs — not filtered by timeframe, since open means open regardless of when last updated
+        long activePrCount = prRepository.countByOwnerAndStateIgnoreCase(owner, "open");
 
         return new OrganizationEvidence(
                 activeWorkstreams,
@@ -93,7 +98,9 @@ public class OrganizationEvidenceService {
                 needsAttention,
                 totalMerged,
                 totalIssues,
-                totalFailures
+                totalFailures,
+                totalCommits,
+                activePrCount
         );
     }
 }
