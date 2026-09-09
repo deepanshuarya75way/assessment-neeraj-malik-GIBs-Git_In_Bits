@@ -54,7 +54,7 @@ public class AiDashboardService {
         com.gitinbits.service.OrganizationEvidenceService.OrganizationEvidence evidence = orgEvidenceService.gatherEvidence(owner, since, until);
 
         String prompt = "You are an Engineering Intelligence Analyst for a GitHub organization. Look at this deterministic evidence for the organization '" + owner + "' over the last " + days + " days:\n" +
-                "- Active Workstreams: " + String.join(", ", evidence.activeWorkstreams()) + "\n" +
+                "- Active Workstreams: " + evidence.activeWorkstreams().stream().map(e -> e.text()).collect(java.util.stream.Collectors.joining(", ")) + "\n" +
                 "- Recently Completed: " + String.join(", ", evidence.recentlyCompleted()) + "\n" +
                 "- Needs Attention: " + String.join(", ", evidence.needsAttention()) + "\n" +
                 "- Total PRs Merged: " + evidence.totalPrsMerged() + "\n" +

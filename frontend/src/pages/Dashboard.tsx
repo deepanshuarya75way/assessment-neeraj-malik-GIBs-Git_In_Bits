@@ -1,27 +1,74 @@
 import { useState } from 'react';
-import { EntityHeader } from '../components/common/EntityHeader';
 import { Card } from '../components/ui/Card';
 import { useDataSource } from '../context/DataSourceContext';
-import { CheckCircle2, Sparkles, RefreshCw, Briefcase, CheckSquare, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Sparkles, RefreshCw, Briefcase, CheckSquare, AlertTriangle, GitPullRequest, GitCommit } from 'lucide-react';
 
-import { useOrganizationSummary, useGenerateOrgSummary, useOrganizationEvidence, useTopDevelopers } from '../api/dashboardService';
+import { useOrganizationSummary, useGenerateOrgSummary, useOrganizationEvidence, useTopDevelopers, type EvidenceItem } from '../api/dashboardService';
+import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/ui/Spinner';
+import { formatDistanceToNow } from 'date-fns';
 import { AIReportMarkdown } from '../components/ai/AIReportMarkdown';
 import { KpiSummaryRow } from '../components/dashboard/KpiSummaryRow';
+
+const RepoMessageContent = ({ item }: { item: EvidenceItem | string }) => {
+  const content = typeof item === 'string' ? item : item.text;
+  const timestamp = typeof item === 'string' ? null : item.timestamp;
+  
+  const match = content.match(/^([^:]+):\s(.*)$/);
+  
+  const timeDisplay = timestamp ? (
+    <span className="text-[10px] text-slate-500 whitespace-nowrap mt-1 md:mt-0 ml-0 md:ml-auto flex-shrink-0 pt-0.5">
+      {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+    </span>
+  ) : null;
+
+  if (match) {
+    const repo = match[1];
+    const message = match[2];
+    return (
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between w-full min-w-0 overflow-hidden gap-1 md:gap-4 flex-1">
+        <div className="flex flex-col items-start gap-1 w-full min-w-0 overflow-hidden">
+          <span className="text-xs text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded leading-none mt-0.5 border border-slate-700/50">
+            {repo}
+          </span>
+          <span className="text-slate-100 leading-snug break-words">{message}</span>
+        </div>
+        {timeDisplay}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col md:flex-row md:items-start md:justify-between w-full min-w-0 overflow-hidden gap-1 md:gap-4 flex-1">
+      <span className="pt-0.5 text-slate-100 break-words">{content}</span>
+      {timeDisplay}
+    </div>
+  );
+};
 
 
 export function Dashboard() {
   const { sourceValue } = useDataSource();
   const [timeframe, setTimeframe] = useState('30_days');
+  const queryClient = useQueryClient();
   
   const { data: orgSummary, isLoading: summaryLoading, refetch: refetchSummary } = useOrganizationSummary(sourceValue || '', timeframe);
   const { data: orgEvidence, isLoading: evidenceLoading } = useOrganizationEvidence(sourceValue || '', timeframe);
   const { data: developers } = useTopDevelopers(sourceValue || '');
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const { mutate: generateSummary, isPending: generating } = useGenerateOrgSummary();
 
   const handleGenerate = () => {
+    setGenerateError(null);
     generateSummary({ owner: sourceValue || '', timeframe }, {
-      onSuccess: () => refetchSummary()
+      onSuccess: () => {
+        refetchSummary();
+        queryClient.invalidateQueries({ queryKey: ['orgEvidence'] });
+        queryClient.invalidateQueries({ queryKey: ['topDevelopers'] });
+      },
+      onError: (err: any) => {
+        const message = err?.response?.data?.error || err?.message || 'Failed to generate briefing';
+        setGenerateError(message);
+      }
     });
   };
 
@@ -76,9 +123,16 @@ export function Dashboard() {
           </div>
           <div className="p-8 relative z-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-              <div className="flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-                <h2 className="text-lg font-bold text-white tracking-tight">AI Executive Briefing</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-5 h-5 text-blue-400" />
+                  <h2 className="text-lg font-bold text-white tracking-tight">AI Executive Briefing</h2>
+                </div>
+                {orgSummary?.generatedAt && (
+                  <span className="text-xs text-slate-400 bg-slate-800/80 border border-slate-700/60 px-2 py-0.5 rounded">
+                    Generated: {new Date(orgSummary.generatedAt).toLocaleDateString()} {new Date(orgSummary.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
               </div>
               <button 
                 onClick={handleGenerate}
@@ -89,6 +143,13 @@ export function Dashboard() {
                 Generate Briefing
               </button>
             </div>
+
+            {generateError && (
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-300 text-sm flex items-center justify-between">
+                <span>{generateError}</span>
+                <button onClick={() => setGenerateError(null)} className="text-red-400 hover:text-red-200 font-bold ml-2">✕</button>
+              </div>
+            )}
 
             <div className="bg-[#1E293B]/60 p-6 rounded-xl border border-slate-700/50 min-h-[120px] flex items-start mb-6 shadow-inner backdrop-blur-sm transition-all duration-500">
               {summaryLoading ? (
@@ -119,12 +180,29 @@ export function Dashboard() {
                     <Briefcase className="w-4 h-4 mr-2" /> Active Work
                   </h3>
                   <ul className="space-y-3">
-                    {orgEvidence.activeWorkstreams.length > 0 ? orgEvidence.activeWorkstreams.map((ws, i) => (
-                      <li key={i} className="text-sm text-slate-300 flex items-start">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-2 flex-shrink-0" />
-                        <span className="line-clamp-2">{ws}</span>
-                      </li>
-                    )) : (
+                    {orgEvidence.activeWorkstreams.length > 0 ? orgEvidence.activeWorkstreams.map((item, i) => {
+                      const text = typeof item === 'string' ? item : item.text;
+                      const isPR = text.startsWith('[PR]');
+                      const isCommit = text.startsWith('[Commit]');
+                      const contentStr = text.replace(/^\[(?:PR|Commit)\]\s*/i, '');
+                      const itemProp = typeof item === 'string' ? contentStr : { text: contentStr, timestamp: item.timestamp };
+                      return (
+                        <li key={i} className="text-sm text-slate-300 flex items-start gap-2 w-full">
+                          {isPR ? (
+                            <div className="w-6 h-6 flex items-center justify-center rounded bg-violet-500/10 text-violet-400 flex-shrink-0">
+                              <GitPullRequest className="w-3.5 h-3.5" />
+                            </div>
+                          ) : isCommit ? (
+                            <div className="w-6 h-6 flex items-center justify-center rounded bg-blue-500/10 text-blue-400 flex-shrink-0">
+                              <GitCommit className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                          )}
+                          <RepoMessageContent item={itemProp} />
+                        </li>
+                      );
+                    }) : (
                       <p className="text-slate-500 text-sm italic">No active workstreams detected.</p>
                     )}
                   </ul>
@@ -137,9 +215,9 @@ export function Dashboard() {
                   </h3>
                   <ul className="space-y-3">
                     {orgEvidence.recentlyCompleted.length > 0 ? orgEvidence.recentlyCompleted.map((rc, i) => (
-                      <li key={i} className="text-sm text-slate-300 flex items-start">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">{rc}</span>
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2 w-full">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <RepoMessageContent item={rc} />
                       </li>
                     )) : (
                       <p className="text-slate-500 text-sm italic">No PRs merged in this period.</p>
@@ -159,9 +237,9 @@ export function Dashboard() {
                   </h3>
                   <ul className="space-y-3">
                     {orgEvidence.needsAttention.length > 0 ? orgEvidence.needsAttention.map((na, i) => (
-                      <li key={i} className="text-sm text-slate-300 flex items-start">
-                        <span className="text-rose-500 mr-2 font-bold flex-shrink-0">⚠</span>
-                        <span className="line-clamp-2">{na}</span>
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2 w-full">
+                        <span className="text-rose-500 font-bold flex-shrink-0 mt-0.5">⚠</span>
+                        <RepoMessageContent item={na} />
                       </li>
                     )) : (
                       <p className="text-slate-500 text-sm italic">Looking good! No major issues detected.</p>

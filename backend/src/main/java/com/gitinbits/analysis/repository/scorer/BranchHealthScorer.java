@@ -80,10 +80,7 @@ public class BranchHealthScorer implements Analyzer<RepositoryAnalysisContext, I
             score += 40;
         }
 
-        score += Math.min(20, additionalProtected * 10); // max contribution from additional is 60? 
-        // Wait, formula says "Maximum contribution: 60"
-        // so if default gives 40, additional gives up to 20. Total max 60.
-        // Wait, prompt says: "Maximum contribution: 60". 40 + 20 = 60.
+        score += Math.min(20, additionalProtected * 10); 
         
         return Math.min(60, score);
     }
@@ -121,10 +118,7 @@ public class BranchHealthScorer implements Analyzer<RepositoryAnalysisContext, I
 
     private int staleBranchScore(RepositoryAnalysisContext context) {
         List<BranchDto> branches = context.branches();
-        if (branches == null || branches.isEmpty()) return 0; // The penalty is 0, wait, rules say "No branches: return 50". But that was for the final score?
-        // Ah, prompt: "No branches: return 50" for staleBranchScore. Let's return 0 penalty instead of 50. Wait, prompt says "No branches: return 50" under staleBranchScore?
-        // No, under "FINAL SCORE", it says "protectedBranchScore + reviewRequirementScore + forcePushSafetyScore + deletionSafetyScore - staleBranchPenalty". 
-        // So penalty should be 0 if no branches.
+        if (branches == null || branches.isEmpty()) return 0;
 
         int penalty = 0;
         long now = System.currentTimeMillis();

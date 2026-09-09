@@ -28,8 +28,10 @@ public class OrganizationEvidenceService {
         this.commitRepository = commitRepository;
     }
 
+    public record EvidenceItem(String text, String timestamp) {}
+
     public record OrganizationEvidence(
-            List<String> activeWorkstreams,
+            List<EvidenceItem> activeWorkstreams,
             List<String> recentlyCompleted,
             List<String> needsAttention,
             long totalPrsMerged,
@@ -49,19 +51,21 @@ public class OrganizationEvidenceService {
         List<com.gitinbits.persistence.document.CommitDoc> recentCommits = commitRepository.findByOwnerAndAuthorDateBetweenOrderByAuthorDateDesc(owner, sinceStr, untilStr);
 
         // Active Workstreams: Titles of recently updated open PRs AND recent commit messages
-        List<String> activeWorkstreams = recentPrs.stream()
+        java.util.Map<String, EvidenceItem> activeWorkstreamsMap = new java.util.LinkedHashMap<>();
+        recentPrs.stream()
                 .filter(pr -> "open".equalsIgnoreCase(pr.state()))
-                .map(pr -> "[PR] " + pr.repoName() + ": " + pr.title())
-                .collect(Collectors.toList());
+                .forEach(pr -> {
+                    String text = "[PR] " + pr.repoName() + ": " + pr.title();
+                    activeWorkstreamsMap.putIfAbsent(text, new EvidenceItem(text, pr.updatedAt()));
+                });
                 
-        // Add distinct commit messages to workstreams if not already covered
-        List<String> commitWorkstreams = recentCommits.stream()
-                .map(c -> "[Commit] " + c.repoName() + ": " + c.message().split("\n")[0]) // just first line of commit
-                .distinct()
-                .collect(Collectors.toList());
+        recentCommits.stream()
+                .forEach(c -> {
+                    String text = "[Commit] " + c.repoName() + ": " + c.message().split("\n")[0];
+                    activeWorkstreamsMap.putIfAbsent(text, new EvidenceItem(text, c.authorDate()));
+                });
                 
-        activeWorkstreams.addAll(commitWorkstreams);
-        activeWorkstreams = activeWorkstreams.stream().distinct().limit(7).collect(Collectors.toList());
+        List<EvidenceItem> activeWorkstreams = activeWorkstreamsMap.values().stream().limit(7).collect(Collectors.toList());
 
         // Recently Completed: Titles of merged PRs
         List<String> recentlyCompleted = recentPrs.stream()

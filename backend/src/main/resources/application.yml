@@ -14,7 +14,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/gitinbits
+      uri: ${MONGODB_URI:mongodb://localhost:27017/gitinbits}
 
   ai:
     openai:
@@ -22,7 +22,7 @@ spring:
       base-url: https://api.groq.com/openai
       chat:
         options:
-          model: llama-3.3-70b-versatile
+          model: ${GROQ_MODEL:openai/gpt-oss-120b}
 
   security:
     oauth2:
@@ -61,6 +61,6 @@ github:
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging:
   level:
-    com.gitinbits: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web.client: DEBUG
+    com.gitinbits: INFO
+    org.springframework.security: INFO
+    org.springframework.web.client: INFO

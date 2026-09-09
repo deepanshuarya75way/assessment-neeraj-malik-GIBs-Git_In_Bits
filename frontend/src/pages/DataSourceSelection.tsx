@@ -12,20 +12,6 @@ export function DataSourceSelection() {
   const [error, setError] = useState<string | null>(null);
 
   const handleMyOrgs = () => {
-    // Current authenticated org selection is handled later in the flow
-    // or by the old OrgSelection logic. Wait, the old flow was Login -> OrgSelection -> Dashboard
-    // Actually, "My Organizations" needs to show the authenticated user's orgs.
-    // Let's implement that flow: User clicks "Continue" -> navigate to /org-selection which fetches user orgs.
-    // BUT we are replacing OrgSelection. So this page needs to either fetch user orgs, or just set DataSourceType and let Dashboard fetch?
-    // Wait, the prompt says:
-    // Option 1 — My Organizations. Flow: Fetch all orgs available -> Display searchable dropdown -> User selects org -> Fetch repositories -> Continue.
-    // If I replace OrgSelection, I need to put the org dropdown here!
-    // But the prompt says "Display three large cards". 
-    // And "Option 1 — My Organizations ... Button: Continue". 
-    // Let's create a separate route or inline it. The prompt says: "Continue using the existing authenticated APIs. No functionality should change."
-    // Let's keep `OrgSelection.tsx` but rename it to `MyOrgsSelection.tsx` or handle it here.
-    // The instructions say: "After successful login, navigate to a new page: Choose Data Source. Display three large cards... Button: Continue".
-    // I should just navigate to a new `/my-orgs` page which is the old `OrgSelection.tsx`.
     navigate('/my-orgs');
   };
 

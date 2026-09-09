@@ -61,8 +61,9 @@ public class GitHubPaginator {
         List<T> allItems = new ArrayList<>();
         URI nextUri = optimizedUri;
         int pageNumber = 0;
+        int MAX_PAGES = 5;
 
-        while (nextUri != null) {
+        while (nextUri != null && pageNumber < MAX_PAGES) {
             pageNumber++;
             log.debug("Fetching page {} (per_page={}) → {}", pageNumber, DEFAULT_PAGE_SIZE, nextUri);
 

@@ -97,8 +97,13 @@ export const useDeveloperEvidence = (owner: string, authorName: string, timefram
   });
 };
 
+export interface EvidenceItem {
+  text: string;
+  timestamp: string;
+}
+
 export interface OrganizationEvidence {
-  activeWorkstreams: string[];
+  activeWorkstreams: EvidenceItem[];
   recentlyCompleted: string[];
   needsAttention: string[];
   totalPrsMerged: number;

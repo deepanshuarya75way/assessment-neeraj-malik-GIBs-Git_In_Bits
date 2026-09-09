@@ -34,11 +34,25 @@ public class AiChatService {
     }
 
     public String chat(String conversationId, String message) {
-        return this.chatClient.prompt()
+        return chat(conversationId, message, null, null);
+    }
+
+    public String chat(String conversationId, String message, String activeOwner, String currentPath) {
+        var promptSpec = this.chatClient.prompt()
                 .user(message)
                 .advisors(a -> a.param("chat_memory_conversation_id", conversationId))
-                .functions("getRepositoryAnalytics", "getRepositoryEvidence", "listAvailableRepositories", "getRepositoryTimeline", "getOrganizationOverview", "getDeveloperEvidence")
-                .call()
-                .content();
+                .functions("getRepositoryAnalytics", "getRepositoryEvidence", "listAvailableRepositories", "getRepositoryTimeline", "getOrganizationOverview", "getDeveloperEvidence");
+
+        if (activeOwner != null && !activeOwner.isBlank()) {
+            String contextPrompt = String.format("""
+                CURRENT UI CONTEXT:
+                - The user currently has organization/owner open: '%s'
+                - Current page path: '%s'
+                When the user refers to "this organization", "my org", "the one that is opened", "here", or asks general questions without explicitly specifying an owner, ALWAYS use '%s' as the owner.
+                """, activeOwner, currentPath != null ? currentPath : "unknown", activeOwner);
+            promptSpec.system(contextPrompt);
+        }
+
+        return promptSpec.call().content();
     }
 }

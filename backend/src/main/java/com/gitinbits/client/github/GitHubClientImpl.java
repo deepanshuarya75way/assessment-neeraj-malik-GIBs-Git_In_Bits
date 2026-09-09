@@ -234,7 +234,8 @@ public class GitHubClientImpl implements GitHubClient {
 
     @Override
     public List<RawCommit> listCommits(String org, String repo) {
-        return fetchList("/repos/" + org + "/" + repo + "/commits", new ParameterizedTypeReference<>() {});
+        String since = java.time.Instant.now().minus(java.time.Duration.ofDays(30)).toString();
+        return fetchList("/repos/" + org + "/" + repo + "/commits?since=" + since, new ParameterizedTypeReference<>() {});
     }
 
     @Override

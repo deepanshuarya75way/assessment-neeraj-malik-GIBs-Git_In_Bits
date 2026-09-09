@@ -16,6 +16,8 @@ import java.util.Optional;
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DashboardController.class);
+
     private final OrganizationSummaryRepository summaryRepository;
     private final DeveloperEvidenceService devEvidenceService;
     private final AiDashboardService aiDashboardService;
@@ -54,11 +56,17 @@ public class DashboardController {
             @RequestParam String owner,
             @RequestParam(defaultValue = "1_day") String timeframe
     ) {
-        // Trigger background sync, but don't block AI generation
-        syncAllReposAsync(owner);
+        // Trigger background sync and block AI generation until done so it uses fresh data
+        syncAllRepos(owner);
         
-        aiDashboardService.generateOrgBrief(owner, timeframe);
-        return ResponseEntity.ok(Map.of("status", "Summary generated successfully"));
+        try {
+            aiDashboardService.generateOrgBrief(owner, timeframe);
+            return ResponseEntity.ok(Map.of("status", "Summary generated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", e.getMessage() != null ? e.getMessage() : "Failed to generate AI summary"
+            ));
+        }
     }
 
     @GetMapping("/developers")
@@ -122,10 +130,14 @@ public class DashboardController {
                     com.gitinbits.dto.context.DataSourceType.AUTHENTICATED_ORGANIZATION, owner, "");
             List<com.gitinbits.dto.response.repo.RepoDto> repos = repoService.listRepos(context);
             for (com.gitinbits.dto.response.repo.RepoDto repo : repos) {
-                repositorySynchronizer.syncIfNeeded(context, owner + "/" + repo.name());
+                try {
+                    repositorySynchronizer.syncIfNeeded(context, owner + "/" + repo.name());
+                } catch (Exception innerEx) {
+                    log.error("Failed to sync repo {}", repo.name(), innerEx);
+                }
             }
         } catch (Exception e) {
-            // Ignore if sync fails, return whatever is in DB
+            log.error("Failed to list repos for {}", owner, e);
         }
     }
 

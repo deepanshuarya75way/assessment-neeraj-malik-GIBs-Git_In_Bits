@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiClient } from '../../api/client';
+import { useDataSource } from '../../context/DataSourceContext';
+import { useLocation } from 'react-router-dom';
 import { AIReportMarkdown } from './AIReportMarkdown';
 import remarkGfm from 'remark-gfm';
 import { X, Send, Loader2 } from 'lucide-react';
@@ -10,6 +12,8 @@ interface Message {
 }
 
 export function AiManagerChat() {
+  const { sourceValue } = useDataSource();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -35,6 +39,8 @@ export function AiManagerChat() {
       const response = await apiClient.post('/api/ai/chat', {
         conversationId,
         message: userMessage,
+        activeOwner: sourceValue || '',
+        currentPath: location.pathname,
       });
       setMessages((prev) => [
         ...prev,
@@ -79,7 +85,12 @@ export function AiManagerChat() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white leading-tight tracking-wide">AI Engineering Manager</h3>
-                <p className="text-xs text-blue-300/80 font-medium tracking-wider uppercase mt-0.5">Online & Ready</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <p className="text-xs text-blue-300/80 font-medium tracking-wider uppercase">
+                    {sourceValue ? `Context: ${sourceValue}` : 'Online & Ready'}
+                  </p>
+                </div>
               </div>
             </div>
             <button

@@ -55,7 +55,7 @@ export function DeveloperDirectory() {
             >
               <div className="flex items-center space-x-4">
                 <img 
-                  src={`https://github.com/${dev.githubLogin || dev.id}.png`} 
+                  src={`https://github.com/${dev.id}.png`} 
                   alt={dev.id} 
                   className="w-12 h-12 rounded-full border border-slate-600 bg-slate-800"
                   onError={(e) => {
@@ -94,7 +94,7 @@ export function DeveloperDirectory() {
                       <div className="p-6 border-b border-border bg-slate-800/30">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={`https://github.com/${devInfo?.githubLogin || selectedDev}.png`} 
+                            src={`https://github.com/${selectedDev}.png`} 
                             alt={selectedDev} 
                             className="w-16 h-16 rounded-full border-2 border-blue-500 bg-slate-800"
                             onError={(e) => {
