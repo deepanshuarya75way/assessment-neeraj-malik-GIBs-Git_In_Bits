@@ -20,6 +20,9 @@ public interface CommitRepository extends MongoRepository<CommitDoc, String> {
     List<CommitDoc> findByOwnerAndAuthorDateBetweenOrderByAuthorDateDesc(String owner, String start, String end);
     List<CommitDoc> findByOwnerAndAuthorNameAndAuthorDateBetweenOrderByAuthorDateDesc(String owner, String authorName, String start, String end);
     
+    @org.springframework.data.mongodb.repository.Query(value = "{ 'owner': ?0, '$or': [ { 'authorName': ?1 }, { 'githubLogin': ?1 } ], 'authorDate': { '$gte': ?2, '$lte': ?3 } }", sort = "{ 'authorDate': -1 }")
+    List<CommitDoc> findDeveloperCommits(String owner, String identifier, String start, String end);
+    
     @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
         "{ '$match': { 'owner': ?0 } }",
         "{ '$sort': { 'authorDate': -1 } }",

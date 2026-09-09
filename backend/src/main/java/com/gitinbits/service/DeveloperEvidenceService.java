@@ -63,18 +63,22 @@ public class DeveloperEvidenceService {
         return gatherEvidence(owner, authorName, Instant.now().minus(Duration.ofDays(30)), Instant.now());
     }
 
-    public DeveloperEvidence gatherEvidence(String owner, String authorName, Instant since, Instant until) {
+    public DeveloperEvidence gatherEvidence(String owner, String identifier, Instant since, Instant until) {
         String sinceStr = java.time.format.DateTimeFormatter.ISO_INSTANT.format(since);
         String untilStr = java.time.format.DateTimeFormatter.ISO_INSTANT.format(until);
 
-        // Resolve GitHub login from the latest commit
-        CommitDoc latestCommit = commitRepository.findFirstByOwnerAndAuthorNameOrderByAuthorDateDesc(owner, authorName);
-        String githubLogin = (latestCommit != null && latestCommit.githubLogin() != null) 
-                ? latestCommit.githubLogin() 
-                : authorName;
+        // 1. Commits Evidence (Searching by either authorName or githubLogin)
+        List<CommitDoc> commits = commitRepository.findDeveloperCommits(owner, identifier, sinceStr, untilStr);
+        
+        // Resolve exactly what the login and name are for subsequent queries
+        String githubLogin = identifier;
+        String resolvedAuthorName = identifier;
+        if (!commits.isEmpty()) {
+            CommitDoc first = commits.get(0);
+            if (first.githubLogin() != null) githubLogin = first.githubLogin();
+            if (first.authorName() != null) resolvedAuthorName = first.authorName();
+        }
 
-        // 1. Commits Evidence
-        List<CommitDoc> commits = commitRepository.findByOwnerAndAuthorNameAndAuthorDateBetweenOrderByAuthorDateDesc(owner, authorName, sinceStr, untilStr);
         long totalAdditions = commits.stream().mapToLong(c -> c.additions() != null ? c.additions() : 0).sum();
         long totalDeletions = commits.stream().mapToLong(c -> c.deletions() != null ? c.deletions() : 0).sum();
 
@@ -141,7 +145,7 @@ public class DeveloperEvidenceService {
         long workflowSuccesses = runs.stream().filter(r -> "success".equalsIgnoreCase(r.conclusion())).count();
 
         return new DeveloperEvidence(
-                authorName,
+                resolvedAuthorName,
                 commits.size(),
                 totalAdditions,
                 totalDeletions,
