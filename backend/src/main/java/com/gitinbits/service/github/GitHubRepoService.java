@@ -22,9 +22,11 @@ public class GitHubRepoService {
     private static final Logger log = LoggerFactory.getLogger(GitHubRepoService.class);
 
     private final GitHubClient gitHubClient;
+    private final com.gitinbits.client.github.graphql.GitHubGraphQLClient gitHubGraphQLClient;
 
-    public GitHubRepoService(GitHubClient gitHubClient) {
+    public GitHubRepoService(GitHubClient gitHubClient, com.gitinbits.client.github.graphql.GitHubGraphQLClient gitHubGraphQLClient) {
         this.gitHubClient = gitHubClient;
+        this.gitHubGraphQLClient = gitHubGraphQLClient;
     }
 
     // ─── Repositories ─────────────────────────────────────────────────────────
@@ -66,6 +68,11 @@ public class GitHubRepoService {
                 .toList();
     }
 
+    public List<CommitDto> listDetailedCommitsSince(GitHubContext context, String repo, java.time.Instant since) {
+        log.debug("Fetching detailed GraphQL commits for: {}/{} since {}", context.accountName(), repo, since);
+        return gitHubGraphQLClient.fetchCommitsWithStats(context.accountName(), repo, since);
+    }
+
     public CommitDto getCommit(GitHubContext context, String repo, String sha) {
         log.debug("Fetching detailed commit stats for: {}/{} sha: {}", context.accountName(), repo, sha);
         return toCommitDto(gitHubClient.getCommit(context.accountName(), repo, sha));
@@ -79,6 +86,11 @@ public class GitHubRepoService {
                 .stream()
                 .map(this::toPullRequestDto)
                 .toList();
+    }
+
+    public List<com.gitinbits.client.github.graphql.PullRequestWithReviews> listDetailedPullsWithReviews(GitHubContext context, String repo) {
+        log.debug("Fetching detailed GraphQL PRs and reviews for: {}/{}", context.accountName(), repo);
+        return gitHubGraphQLClient.fetchPullsWithReviews(context.accountName(), repo);
     }
 
     public List<ReviewDto> listReviews(GitHubContext context, String repo, int prNumber) {

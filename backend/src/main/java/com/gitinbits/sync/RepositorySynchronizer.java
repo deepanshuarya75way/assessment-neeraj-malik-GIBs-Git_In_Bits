@@ -83,23 +83,9 @@ public class RepositorySynchronizer {
 
         // Fetch Raw DTOs — pass repoName only, not repoFullName
         RepoDto repoDto = githubRepoService.getRepo(context, repoName);
-        List<CommitDto> basicCommits = githubRepoService.listCommits(context, repoName);
-        List<CommitDto> commits = new java.util.ArrayList<>();
-        int count = 0;
-        for (CommitDto c : basicCommits) {
-            if (count < 30) {
-                try {
-                    commits.add(githubRepoService.getCommit(context, repoName, c.sha()));
-                } catch (Exception e) {
-                    log.warn("Failed to fetch detailed commit stats for sha: {}", c.sha(), e);
-                    commits.add(c);
-                }
-            } else {
-                commits.add(c);
-            }
-            count++;
-        }
-        List<PullRequestDto> pullRequests = githubRepoService.listPulls(context, repoName);
+        Instant since = Instant.now().minus(Duration.ofDays(30));
+        List<CommitDto> commits = githubRepoService.listDetailedCommitsSince(context, repoName, since);
+        List<com.gitinbits.client.github.graphql.PullRequestWithReviews> prsWithReviews = githubRepoService.listDetailedPullsWithReviews(context, repoName);
         List<IssueDto> issues = githubRepoService.listIssues(context, repoName);
         List<BranchDto> branches = githubRepoService.listBranches(context, repoName);
         List<ContributorDto> contributors = githubRepoService.listContributors(context, repoName);
@@ -118,23 +104,17 @@ public class RepositorySynchronizer {
 
         // Map and Save PRs and fetch Reviews
         int reviewCount = 0;
-        List<PullRequestDoc> prDocs = pullRequests.stream()
-                .map(dto -> mapper.toPullRequestDoc(dto, repoFullName, syncTime))
+        List<PullRequestDoc> prDocs = prsWithReviews.stream()
+                .map(wrapper -> mapper.toPullRequestDoc(wrapper.pullRequest(), repoFullName, syncTime))
                 .collect(Collectors.toList());
         pullRequestRepository.saveAll(prDocs);
 
-        int prLimitCount = 0;
-        for (PullRequestDto pr : pullRequests) {
-            if (prLimitCount >= 200) {
-                break;
-            }
-            List<ReviewDto> reviews = githubRepoService.listReviews(context, repoName, pr.number());
-            List<ReviewDoc> reviewDocs = reviews.stream()
-                    .map(dto -> mapper.toReviewDoc(dto, repoFullName, pr.number(), syncTime))
+        for (com.gitinbits.client.github.graphql.PullRequestWithReviews wrapper : prsWithReviews) {
+            List<ReviewDoc> reviewDocs = wrapper.reviews().stream()
+                    .map(dto -> mapper.toReviewDoc(dto, repoFullName, wrapper.pullRequest().number(), syncTime))
                     .collect(Collectors.toList());
             reviewRepository.saveAll(reviewDocs);
             reviewCount += reviewDocs.size();
-            prLimitCount++;
         }
 
         // Map and Save Issues
